@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Airgap — Presentation</title>
+<style>
+  :root{
+    --butter:#F5D061;
+    --butter-soft:#FBEFC2;
+    --ink:#0E0E0E;
+    --paper:#FFFFFF;
+    --muted:#6b6b6b;
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--sans);
+    background:var(--ink);
+    color:var(--ink);
+    overflow:hidden;
+  }
+  .deck{position:relative;width:100vw;height:100vh}
+  .slide{
+    position:absolute;inset:0;
+    display:none;flex-direction:column;justify-content:center;
+    padding:8vh 9vw;
+  }
+  .slide.active{display:flex;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* palettes */
+  .bg-paper{background:var(--paper)}
+  .bg-ink{background:var(--ink);color:var(--paper)}
+  .bg-butter{background:var(--butter)}
+
+  .kicker{
+    font-size:.8rem;letter-spacing:.28em;text-transform:uppercase;
+    font-weight:700;color:var(--muted);margin-bottom:1.4rem;
+  }
+  .bg-ink .kicker{color:var(--butter)}
+  .bg-butter .kicker{color:#7a5c00}
+
+  h1{font-family:var(--serif);font-size:clamp(3rem,9vw,8rem);line-height:.95;font-weight:700;letter-spacing:-.02em}
+  h2{font-family:var(--serif);font-size:clamp(2rem,5vw,3.8rem);line-height:1.02;font-weight:700;letter-spacing:-.015em;margin-bottom:1.6rem}
+  h3{font-size:1.05rem;font-weight:700;margin-bottom:.35rem}
+  p.lead{font-size:clamp(1.1rem,1.8vw,1.5rem);line-height:1.5;max-width:46ch;color:var(--muted)}
+  .bg-ink p.lead{color:#cfcfcf}
+  .bg-butter p.lead{color:#5c4600}
+
+  .accent-bar{width:64px;height:8px;background:var(--butter);margin:2rem 0}
+  .bg-butter .accent-bar{background:var(--ink)}
+
+  .big-quote{font-family:var(--serif);font-size:clamp(2.2rem,5.5vw,4.6rem);line-height:1.08;font-weight:700;letter-spacing:-.02em;max-width:18ch}
+  .em{background:var(--ink);color:var(--butter);padding:0 .12em}
+  .bg-ink .em{background:var(--butter);color:var(--ink)}
+
+  .grid{display:grid;gap:1.4rem;margin-top:.5rem}
+  .cols-2{grid-template-columns:repeat(2,1fr)}
+  .cols-4{grid-template-columns:repeat(4,1fr)}
+  .cols-3{grid-template-columns:repeat(3,1fr)}
+  .tile{border:1.5px solid var(--ink);border-radius:14px;padding:1.3rem 1.4rem}
+  .bg-ink .tile{border-color:#3a3a3a}
+  .tile .n{font-family:var(--serif);font-size:1.6rem;color:var(--butter);font-weight:700}
+  .bg-butter .tile{border-color:var(--ink)}
+  .tile p{font-size:.95rem;color:var(--muted);line-height:1.45}
+  .bg-ink .tile p{color:#bdbdbd}
+
+  ul.clean{list-style:none;display:flex;flex-direction:column;gap:1rem;max-width:52ch}
+  ul.clean li{font-size:clamp(1rem,1.5vw,1.25rem);line-height:1.4;padding-left:1.6rem;position:relative;color:#2a2a2a}
+  .bg-ink ul.clean li{color:#dcdcdc}
+  ul.clean li::before{content:"";position:absolute;left:0;top:.55em;width:12px;height:12px;background:var(--butter);border-radius:3px}
+
+  /* pipeline */
+  .pipe{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin-top:1rem}
+  .step{flex:1;min-width:120px;border:1.5px solid var(--ink);border-radius:12px;padding:1rem;margin:.3rem;position:relative}
+  .step h3{font-size:.95rem}
+  .step small{color:var(--muted);font-size:.8rem;line-height:1.3;display:block;margin-top:.2rem}
+  .arrow{align-self:center;color:var(--butter);font-size:1.6rem;font-weight:800;padding:0 .2rem}
+
+  /* lineage mini */
+  .lin{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-top:1.4rem}
+  .node{border-radius:10px;padding:.5rem .8rem;font-size:.82rem;font-weight:600;border:2px solid #cbd5e1;background:#fff;color:#1a1a1a}
+  .node.leak{border-color:#e5484d}
+  .node.crit{border-color:#e5484d;box-shadow:0 0 0 3px rgba(229,72,77,.15)}
+  .lin .a{color:#e5484d;font-weight:800}
+  .lin .g{color:#c7c9d1;font-weight:800}
+
+  .chips{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.2rem}
+  .chip{font-size:.85rem;font-weight:700;padding:.35rem .8rem;border-radius:999px}
+  .c-crit{background:#e5484d;color:#fff}
+  .c-high{background:#f76b15;color:#fff}
+  .c-med{background:#ffb224;color:#0E0E0E}
+
+  .evidence{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.82rem;background:var(--butter-soft);border-radius:10px;padding:.9rem 1rem;margin-top:1.3rem;color:#4a3c00;line-height:1.7;word-break:break-word}
+
+  .repo{font-family:ui-monospace,Menlo,monospace;font-size:1rem;color:var(--butter)}
+
+  /* chrome */
+  .progress{position:fixed;top:0;left:0;height:5px;background:var(--butter);width:0;transition:width .35s ease;z-index:10}
+  .counter{position:fixed;bottom:22px;right:28px;font-size:.8rem;font-weight:700;letter-spacing:.05em;color:var(--muted);z-index:10}
+  .bg-ink ~ .counter{color:#888}
+  .hint{position:fixed;bottom:22px;left:28px;font-size:.72rem;color:var(--muted);z-index:10;letter-spacing:.03em}
+  .logo{position:fixed;top:20px;left:28px;font-family:var(--serif);font-weight:700;font-size:1rem;z-index:10;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="logo">🛡️ Airgap</div>
+<div class="deck" id="deck">
+
+  <!-- 1 TITLE -->
+  <section class="slide active bg-ink">
+    <div class="kicker">DataHub Agent Hackathon · Wildcard</div>
+    <h1>Airgap</h1>
+    <div class="accent-bar"></div>
+    <p class="lead">A local-first data governance &amp; PII lineage auditor for DataHub.
+      An air-gapped auditor for the data you can't afford to leak.</p>
+  </section>
+
+  <!-- 2 PROBLEM -->
+  <section class="slide bg-paper">
+    <div class="kicker">The problem</div>
+    <h2>PII is classified at the source.<br>Then lineage forgets.</h2>
+    <ul class="clean">
+      <li>A column tagged <b>PII</b> flows through staging, marts, marketing tables and ML features — but the classification <b>doesn't travel with it</b>.</li>
+      <li>Downstream copies land <b>untagged</b>, often in assets with <b>no owner</b> — nobody is accountable.</li>
+      <li>Auditing it means walking the lineage graph by hand. It doesn't scale.</li>
+      <li>Automate it with a <b>cloud LLM</b> and you leak the very metadata you're protecting.</li>
+    </ul>
+  </section>
+
+  <!-- 3 INSIGHT -->
+  <section class="slide bg-butter">
+    <div class="kicker">The insight</div>
+    <p class="big-quote">The tool that protects your data <span class="em">shouldn't leak it.</span></p>
+    <p class="lead" style="margin-top:1.6rem">Detection is deterministic local code. Explanations come from a
+      local model. The only network call is a read to the DataHub you point at.</p>
+  </section>
+
+  <!-- 4 WHAT IT DOES -->
+  <section class="slide bg-paper">
+    <div class="kicker">What it does</div>
+    <h2>Reads DataHub. Finds the leak. Hands you the fix.</h2>
+    <div class="grid cols-4">
+      <div class="tile"><div class="n">01</div><h3>Read context</h3><p>Schemas, tags, glossary terms, ownership &amp; lineage from DataHub.</p></div>
+      <div class="tile"><div class="n">02</div><h3>Detect</h3><p>Deterministic rules trace PII through column-level lineage.</p></div>
+      <div class="tile"><div class="n">03</div><h3>Explain locally</h3><p>A local Ollama model frames each finding for a DPO — never decides it.</p></div>
+      <div class="tile"><div class="n">04</div><h3>Remediate</h3><p>Generates ready-to-run DataHub SDK patches for a PR.</p></div>
+    </div>
+  </section>
+
+  <!-- 5 HOW IT WORKS -->
+  <section class="slide bg-ink">
+    <div class="kicker">How it works</div>
+    <h2 style="color:#fff">One pipeline, fully offline</h2>
+    <div class="pipe">
+      <div class="step"><h3>Source</h3><small>DataHub GraphQL — or bundled fixture</small></div>
+      <div class="arrow">→</div>
+      <div class="step"><h3>Normalize</h3><small>One source-agnostic MetadataGraph</small></div>
+      <div class="arrow">→</div>
+      <div class="step"><h3>Detect</h3><small>R1 / R2 + blast-radius severity</small></div>
+      <div class="arrow">→</div>
+      <div class="step"><h3>Explain</h3><small>Local Ollama · localhost only</small></div>
+      <div class="arrow">→</div>
+      <div class="step"><h3>Emit</h3><small>JSON · report · leak map · patches</small></div>
+    </div>
+    <p class="lead" style="margin-top:2rem">Same detection runs against a live catalog or the synthetic fixture — judges reproduce it with zero setup.</p>
+  </section>
+
+  <!-- 6 DATAHUB INTEGRATION -->
+  <section class="slide bg-paper">
+    <div class="kicker">DataHub integration</div>
+    <h2>DataHub is the context platform</h2>
+    <div class="grid cols-3">
+      <div class="tile"><h3>Read (GraphQL)</h3><p>Paginate datasets, then pull field-level tags &amp; glossary terms, ownership, and dataset- + column-level lineage (<code>fineGrainedLineages</code>).</p></div>
+      <div class="tile"><h3>Normalize</h3><p>Map responses into Asset / Field / LineageEdge; split <code>schemaField</code> URNs so columns line up with lineage.</p></div>
+      <div class="tile"><h3>Write back</h3><p>Emit <code>acryl-datahub</code> SDK code to re-tag fields or assign owners — reviewed, then merged.</p></div>
+    </div>
+    <p class="lead" style="margin-top:1.6rem">Read-only against your instance. The fixture mirrors DataHub's exact URN &amp; schema model.</p>
+  </section>
+
+  <!-- 7 DETECTION -->
+  <section class="slide bg-ink">
+    <div class="kicker">Detection</div>
+    <h2 style="color:#fff">Two rules, real evidence</h2>
+    <div class="grid cols-2">
+      <div class="tile"><h3 style="color:#fff">R1 — Untagged PII propagation</h3><p>A classified field flows into a downstream field/dataset carrying no equivalent classification.</p></div>
+      <div class="tile"><h3 style="color:#fff">R2 — Ownerless sensitive asset</h3><p>A dataset holding PII (directly or by lineage) has no owner. Nobody is accountable.</p></div>
+    </div>
+    <div class="evidence">users.email&nbsp;→&nbsp;stg_users.email&nbsp;→&nbsp;dim_customer.email&nbsp;→&nbsp;<b>marketing_enriched.email</b>&nbsp;⚠ untagged</div>
+    <p class="lead" style="margin-top:1rem;font-size:1rem">Severity = blast radius. PII reaching a human-facing dashboard escalates to CRITICAL.</p>
+  </section>
+
+  <!-- 8 RESULTS -->
+  <section class="slide bg-paper">
+    <div class="kicker">Results · Acme catalog</div>
+    <h2>5 leaks found, ranked by blast radius</h2>
+    <div class="lin">
+      <span class="node">users</span><span class="a">→</span>
+      <span class="node">stg_users</span><span class="a">→</span>
+      <span class="node">dim_customer</span><span class="a">→</span>
+      <span class="node leak crit">marketing_enriched</span>
+      <span class="g">→</span><span class="node">Campaign Dashboard</span>
+    </div>
+    <div class="chips">
+      <span class="chip c-crit">CRITICAL ×3</span>
+      <span class="chip c-high">HIGH ×1</span>
+      <span class="chip c-med">MEDIUM ×1</span>
+    </div>
+    <p class="lead" style="margin-top:1.4rem">Every finding ships with its full lineage evidence path, a local-LLM explanation, and a remediation patch — plus an offline visual leak map.</p>
+  </section>
+
+  <!-- 9 WHY IT WINS -->
+  <section class="slide bg-butter">
+    <div class="kicker">Why it matters</div>
+    <h2>Governance you can run on real data</h2>
+    <ul class="clean">
+      <li><b>Private by construction</b> — deterministic core + local LLM; no metadata leaves the machine.</li>
+      <li><b>Reproducible &amp; hallucination-free</b> — the model explains, it never decides.</li>
+      <li><b>Actionable</b> — findings, evidence, a leak map, and PR-ready fixes.</li>
+      <li><b>Real DataHub integration</b> — same detection on live GraphQL or fixture.</li>
+    </ul>
+  </section>
+
+  <!-- 10 CLOSE -->
+  <section class="slide bg-ink">
+    <div class="kicker">Airgap</div>
+    <p class="big-quote" style="color:#fff">An air-gapped auditor for the data you <span class="em">can't afford to leak.</span></p>
+    <div class="accent-bar"></div>
+    <p class="repo">github.com/zelihaguven/airgap</p>
+  </section>
+
+</div>
+
+<div class="counter" id="counter">01 / 10</div>
+<div class="hint">← → to navigate · F for fullscreen</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  const progress=document.getElementById('progress');
+  const counter=document.getElementById('counter');
+  let i=0;
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    progress.style.width=((i+1)/slides.length*100)+'%';
+    counter.textContent=String(i+1).padStart(2,'0')+' / '+String(slides.length).padStart(2,'0');
+  }
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){show(i+1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){show(i-1)}
+    else if(e.key==='Home'){show(0)}
+    else if(e.key==='End'){show(slides.length-1)}
+    else if(e.key.toLowerCase()==='f'){
+      if(!document.fullscreenElement){document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}
+      else{document.exitFullscreen&&document.exitFullscreen()}
+    }
+  });
+  document.getElementById('deck').addEventListener('click',e=>{
+    const x=e.clientX/window.innerWidth;
+    show(x<0.3?i-1:i+1);
+  });
+  show(0);
+</script>
+</body>
+</html>
