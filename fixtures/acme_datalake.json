@@ -1,0 +1,166 @@
+{
+  "_comment": "Synthetic DataHub-shape metadata for 'Acme' data lake. Field names and URN format mirror real DataHub. PII is correctly tagged at the source and through the internal warehouse layers, but classification is DROPPED on two consumer-facing assets, creating governance leaks that Airgap detects via lineage.",
+  "assets": [
+    {
+      "urn": "urn:li:dataset:(urn:li:dataPlatform:postgres,acme.public.users,PROD)",
+      "name": "acme.public.users",
+      "entity_type": "dataset",
+      "platform": "postgres",
+      "tags": ["PII"],
+      "owners": ["urn:li:corpGroup:data-engineering"],
+      "fields": [
+        {"path": "id", "native_type": "bigint"},
+        {"path": "email", "native_type": "varchar", "tags": ["PII", "Email"], "glossary_terms": ["Classification.Sensitive"]},
+        {"path": "full_name", "native_type": "varchar", "tags": ["PII"], "glossary_terms": ["Classification.Sensitive"]},
+        {"path": "phone", "native_type": "varchar", "tags": ["PII", "PhoneNumber"], "glossary_terms": ["Classification.Sensitive"]},
+        {"path": "country", "native_type": "varchar"},
+        {"path": "created_at", "native_type": "timestamp"}
+      ]
+    },
+    {
+      "urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.staging.stg_users,PROD)",
+      "name": "acme.staging.stg_users",
+      "entity_type": "dataset",
+      "platform": "snowflake",
+      "tags": ["PII"],
+      "owners": ["urn:li:corpGroup:data-engineering"],
+      "fields": [
+        {"path": "id", "native_type": "number"},
+        {"path": "email", "native_type": "varchar", "tags": ["PII", "Email"], "glossary_terms": ["Classification.Sensitive"]},
+        {"path": "full_name", "native_type": "varchar", "tags": ["PII"], "glossary_terms": ["Classification.Sensitive"]},
+        {"path": "phone", "native_type": "varchar", "tags": ["PII", "PhoneNumber"], "glossary_terms": ["Classification.Sensitive"]},
+        {"path": "country", "native_type": "varchar"},
+        {"path": "created_at", "native_type": "timestamp"}
+      ]
+    },
+    {
+      "urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.dim_customer,PROD)",
+      "name": "acme.analytics.dim_customer",
+      "entity_type": "dataset",
+      "platform": "snowflake",
+      "tags": ["PII"],
+      "owners": ["urn:li:corpGroup:analytics"],
+      "fields": [
+        {"path": "customer_id", "native_type": "number"},
+        {"path": "email", "native_type": "varchar", "tags": ["PII", "Email"], "glossary_terms": ["Classification.Sensitive"]},
+        {"path": "name", "native_type": "varchar", "tags": ["PII"], "glossary_terms": ["Classification.Sensitive"]},
+        {"path": "phone", "native_type": "varchar", "tags": ["PII", "PhoneNumber"], "glossary_terms": ["Classification.Sensitive"]},
+        {"path": "country", "native_type": "varchar"},
+        {"path": "segment", "native_type": "varchar"}
+      ]
+    },
+    {
+      "urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.marketing.marketing_enriched,PROD)",
+      "name": "acme.marketing.marketing_enriched",
+      "entity_type": "dataset",
+      "platform": "snowflake",
+      "tags": [],
+      "owners": [],
+      "fields": [
+        {"path": "customer_id", "native_type": "number"},
+        {"path": "email", "native_type": "varchar"},
+        {"path": "name", "native_type": "varchar"},
+        {"path": "segment", "native_type": "varchar"},
+        {"path": "propensity_score", "native_type": "float"}
+      ]
+    },
+    {
+      "urn": "urn:li:dataset:(urn:li:dataPlatform:feast,acme.ml.churn_features,PROD)",
+      "name": "acme.ml.churn_features",
+      "entity_type": "dataset",
+      "platform": "feast",
+      "tags": [],
+      "owners": ["urn:li:corpGroup:ml-platform"],
+      "fields": [
+        {"path": "customer_id", "native_type": "number"},
+        {"path": "phone_raw", "native_type": "varchar"},
+        {"path": "email_hash", "native_type": "varchar"},
+        {"path": "tenure_days", "native_type": "int"},
+        {"path": "orders_30d", "native_type": "int"}
+      ]
+    },
+    {
+      "urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.tmp_user_export,PROD)",
+      "name": "acme.analytics.tmp_user_export",
+      "entity_type": "dataset",
+      "platform": "snowflake",
+      "tags": [],
+      "owners": ["urn:li:corpGroup:analytics"],
+      "fields": [
+        {"path": "customer_id", "native_type": "number"},
+        {"path": "email", "native_type": "varchar"}
+      ]
+    },
+    {
+      "urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.user_backfill,PROD)",
+      "name": "acme.analytics.user_backfill",
+      "entity_type": "dataset",
+      "platform": "snowflake",
+      "tags": [],
+      "owners": ["urn:li:corpGroup:analytics"],
+      "fields": [
+        {"path": "customer_id", "native_type": "number"},
+        {"path": "phone", "native_type": "varchar"}
+      ]
+    },
+    {
+      "urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.retention_calc,PROD)",
+      "name": "acme.analytics.retention_calc",
+      "entity_type": "dataset",
+      "platform": "snowflake",
+      "tags": ["PII"],
+      "owners": ["urn:li:corpGroup:analytics"],
+      "fields": [
+        {"path": "customer_id", "native_type": "number"},
+        {"path": "phone", "native_type": "varchar", "tags": ["PII", "PhoneNumber"], "glossary_terms": ["Classification.Sensitive"]}
+      ]
+    },
+    {
+      "urn": "urn:li:dashboard:(looker,acme.marketing_campaign)",
+      "name": "Marketing Campaign Dashboard",
+      "entity_type": "dashboard",
+      "platform": "looker",
+      "owners": ["urn:li:corpGroup:marketing"]
+    },
+    {
+      "urn": "urn:li:dashboard:(looker,acme.exec_revenue)",
+      "name": "Executive Revenue Dashboard",
+      "entity_type": "dashboard",
+      "platform": "looker",
+      "owners": ["urn:li:corpGroup:analytics"]
+    },
+    {
+      "urn": "urn:li:chart:(looker,acme.churn_risk)",
+      "name": "Churn Risk Chart",
+      "entity_type": "chart",
+      "platform": "looker",
+      "owners": ["urn:li:corpGroup:ml-platform"]
+    }
+  ],
+  "edges": [
+    {"upstream": "urn:li:dataset:(urn:li:dataPlatform:postgres,acme.public.users,PROD)", "downstream": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.staging.stg_users,PROD)"},
+    {"upstream": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.staging.stg_users,PROD)", "downstream": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.dim_customer,PROD)"},
+    {"upstream": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.dim_customer,PROD)", "downstream": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.marketing.marketing_enriched,PROD)"},
+    {"upstream": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.dim_customer,PROD)", "downstream": "urn:li:dataset:(urn:li:dataPlatform:feast,acme.ml.churn_features,PROD)"},
+    {"upstream": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.marketing.marketing_enriched,PROD)", "downstream": "urn:li:dashboard:(looker,acme.marketing_campaign)"},
+    {"upstream": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.dim_customer,PROD)", "downstream": "urn:li:dashboard:(looker,acme.exec_revenue)"},
+    {"upstream": "urn:li:dataset:(urn:li:dataPlatform:feast,acme.ml.churn_features,PROD)", "downstream": "urn:li:chart:(looker,acme.churn_risk)"},
+    {"upstream": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.dim_customer,PROD)", "downstream": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.tmp_user_export,PROD)"},
+    {"upstream": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.dim_customer,PROD)", "downstream": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.user_backfill,PROD)"},
+    {"upstream": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.user_backfill,PROD)", "downstream": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.retention_calc,PROD)"}
+  ],
+  "field_edges": [
+    {"up_urn": "urn:li:dataset:(urn:li:dataPlatform:postgres,acme.public.users,PROD)", "up_field": "email", "down_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.staging.stg_users,PROD)", "down_field": "email"},
+    {"up_urn": "urn:li:dataset:(urn:li:dataPlatform:postgres,acme.public.users,PROD)", "up_field": "full_name", "down_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.staging.stg_users,PROD)", "down_field": "full_name"},
+    {"up_urn": "urn:li:dataset:(urn:li:dataPlatform:postgres,acme.public.users,PROD)", "up_field": "phone", "down_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.staging.stg_users,PROD)", "down_field": "phone"},
+    {"up_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.staging.stg_users,PROD)", "up_field": "email", "down_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.dim_customer,PROD)", "down_field": "email"},
+    {"up_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.staging.stg_users,PROD)", "up_field": "full_name", "down_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.dim_customer,PROD)", "down_field": "name"},
+    {"up_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.staging.stg_users,PROD)", "up_field": "phone", "down_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.dim_customer,PROD)", "down_field": "phone"},
+    {"up_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.dim_customer,PROD)", "up_field": "email", "down_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.marketing.marketing_enriched,PROD)", "down_field": "email"},
+    {"up_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.dim_customer,PROD)", "up_field": "name", "down_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.marketing.marketing_enriched,PROD)", "down_field": "name"},
+    {"up_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.dim_customer,PROD)", "up_field": "phone", "down_urn": "urn:li:dataset:(urn:li:dataPlatform:feast,acme.ml.churn_features,PROD)", "down_field": "phone_raw"},
+    {"up_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.dim_customer,PROD)", "up_field": "email", "down_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.tmp_user_export,PROD)", "down_field": "email"},
+    {"up_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.dim_customer,PROD)", "up_field": "phone", "down_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.user_backfill,PROD)", "down_field": "phone"},
+    {"up_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.user_backfill,PROD)", "up_field": "phone", "down_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.retention_calc,PROD)", "down_field": "phone"}
+  ]
+}

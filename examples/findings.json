@@ -1,0 +1,103 @@
+{
+  "source": "fixture",
+  "findings": [
+    {
+      "id": "AIRGAP-R1-001",
+      "rule": "R1",
+      "title": "Untagged PII propagation into acme.marketing.marketing_enriched",
+      "severity": "CRITICAL",
+      "asset_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.marketing.marketing_enriched,PROD)",
+      "asset_name": "acme.marketing.marketing_enriched",
+      "leaked_fields": [
+        "email",
+        "name"
+      ],
+      "evidence": [
+        "acme.public.users.email -> acme.staging.stg_users.email -> acme.analytics.dim_customer.email -> acme.marketing.marketing_enriched.email",
+        "acme.public.users.full_name -> acme.staging.stg_users.full_name -> acme.analytics.dim_customer.name -> acme.marketing.marketing_enriched.name"
+      ],
+      "blast_radius": 1,
+      "consumers": {
+        "dashboard": 1
+      },
+      "remediation": "Apply the PII/Sensitive classification (and matching glossary term) to field(s) email, name on acme.marketing.marketing_enriched, or mask/drop them before this asset. Propagate the term from the upstream classified column.",
+      "explanation": "The finding indicates that personally identifiable information (PII) such as email and name are being propagated into the `acme.marketing.marketing_enriched` dataset without proper tagging, which violates data governance rules. This is a critical risk under GDPR as it could lead to unauthorized processing of personal data. The urgency is high due to the severity marked as CRITICAL and the potential exposure through one downstream consumer (dashboard)."
+    },
+    {
+      "id": "AIRGAP-R1-003",
+      "rule": "R1",
+      "title": "Untagged PII propagation into acme.ml.churn_features",
+      "severity": "CRITICAL",
+      "asset_urn": "urn:li:dataset:(urn:li:dataPlatform:feast,acme.ml.churn_features,PROD)",
+      "asset_name": "acme.ml.churn_features",
+      "leaked_fields": [
+        "phone_raw"
+      ],
+      "evidence": [
+        "acme.public.users.phone -> acme.staging.stg_users.phone -> acme.analytics.dim_customer.phone -> acme.ml.churn_features.phone_raw"
+      ],
+      "blast_radius": 1,
+      "consumers": {
+        "chart": 1
+      },
+      "remediation": "Apply the PII/Sensitive classification (and matching glossary term) to field(s) phone_raw on acme.ml.churn_features, or mask/drop them before this asset. Propagate the term from the upstream classified column.",
+      "explanation": "The finding indicates that sensitive PII, specifically `phone_raw`, is being propagated into the `acme.ml.churn_features` dataset without proper tagging. This violates GDPR requirements for data minimization and transparency. The critical severity and immediate impact on downstream consumers make this a high-priority issue that needs urgent attention to prevent potential privacy breaches."
+    },
+    {
+      "id": "AIRGAP-R2-001",
+      "rule": "R2",
+      "title": "Ownerless sensitive asset: acme.marketing.marketing_enriched",
+      "severity": "CRITICAL",
+      "asset_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.marketing.marketing_enriched,PROD)",
+      "asset_name": "acme.marketing.marketing_enriched",
+      "leaked_fields": [],
+      "evidence": [
+        "acme.marketing.marketing_enriched receives PII via lineage from an upstream classified source but has no assigned owner."
+      ],
+      "blast_radius": 1,
+      "consumers": {
+        "dashboard": 1
+      },
+      "remediation": "Assign an accountable owner (team or user) to acme.marketing.marketing_enriched in DataHub, and confirm a retention/data-contract policy applies.",
+      "explanation": "The asset `acme.marketing.marketing_enriched` contains sensitive data, including PII, with no assigned owner. This lack of ownership and the fact that it is consumed by a dashboard make it a critical compliance risk under GDPR, as there must be clear accountability for handling personal data. Immediate action is required to assign an owner and ensure proper governance."
+    },
+    {
+      "id": "AIRGAP-R1-004",
+      "rule": "R1",
+      "title": "Untagged PII propagation into acme.analytics.user_backfill",
+      "severity": "HIGH",
+      "asset_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.user_backfill,PROD)",
+      "asset_name": "acme.analytics.user_backfill",
+      "leaked_fields": [
+        "phone"
+      ],
+      "evidence": [
+        "acme.public.users.phone -> acme.staging.stg_users.phone -> acme.analytics.dim_customer.phone -> acme.analytics.user_backfill.phone"
+      ],
+      "blast_radius": 1,
+      "consumers": {
+        "dataset": 1
+      },
+      "remediation": "Apply the PII/Sensitive classification (and matching glossary term) to field(s) phone on acme.analytics.user_backfill, or mask/drop them before this asset. Propagate the term from the upstream classified column.",
+      "explanation": "The finding shows that sensitive PII (phone numbers) are being propagated into the `acme.analytics.user_backfill` dataset without proper tagging, which violates data governance rules. This is a high-severity risk under GDPR as it could lead to unauthorized processing of personal data. Immediate action is required to address this issue and ensure compliance."
+    },
+    {
+      "id": "AIRGAP-R1-002",
+      "rule": "R1",
+      "title": "Untagged PII propagation into acme.analytics.tmp_user_export",
+      "severity": "MEDIUM",
+      "asset_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.tmp_user_export,PROD)",
+      "asset_name": "acme.analytics.tmp_user_export",
+      "leaked_fields": [
+        "email"
+      ],
+      "evidence": [
+        "acme.public.users.email -> acme.staging.stg_users.email -> acme.analytics.dim_customer.email -> acme.analytics.tmp_user_export.email"
+      ],
+      "blast_radius": 0,
+      "consumers": {},
+      "remediation": "Apply the PII/Sensitive classification (and matching glossary term) to field(s) email on acme.analytics.tmp_user_export, or mask/drop them before this asset. Propagate the term from the upstream classified column.",
+      "explanation": "The finding shows that personally identifiable information (PII) in the form of emails is being propagated into `acme.analytics.tmp_user_export` without proper tagging, which could lead to a compliance risk under GDPR. This needs attention as it may expose sensitive data unnecessarily, and addressing this should be prioritized to avoid potential legal issues."
+    }
+  ]
+}
