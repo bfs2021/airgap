@@ -58,10 +58,27 @@ Skip the LLM (deterministic only) with `--no-llm`. See `examples/` for sample ou
 
 ---
 
-## Auditing a live DataHub
+## Run against a REAL DataHub — no Docker, no cloud
 
-Airgap normalizes fixture data and live DataHub metadata into the **same model**,
-so the exact same detection runs against either:
+Airgap ships with a one-command setup that stands up a **local, Docker-free
+DataHub** ([DataHub Lite](https://docs.datahub.com/docs/datahub-lite) — a DuckDB-backed
+instance), seeds it with the Acme catalog as genuine DataHub metadata aspects,
+and imports it:
+
+```bash
+bash scripts/setup_datahub_lite.sh
+./.venv/bin/airgap audit --source datahub-lite
+```
+
+Airgap then reads real DataHub metadata back — `schemaMetadata` with field-level
+tags & glossary terms, `ownership`, `upstreamLineage` with column-level
+`fineGrainedLineages`, and `dashboardInfo` — through the `datahub lite` CLI, and
+runs the **exact same detection** it runs on the fixture. This is Airgap's thesis
+in one line: **a local-first governance auditor reading from a local-first DataHub.**
+
+## Auditing a live DataHub (GMS)
+
+The same detection also runs against any hosted DataHub via GraphQL:
 
 ```bash
 ./.venv/bin/airgap audit --source datahub \
@@ -69,7 +86,12 @@ so the exact same detection runs against either:
   --token $DATAHUB_TOKEN
 ```
 
-Only read-only GraphQL queries are issued. LLM calls still go only to localhost.
+Only read-only queries are issued. LLM calls always go only to localhost.
+
+### The three sources, one model
+`fixture` (zero setup) · `datahub-lite` (real DataHub, local, no Docker) ·
+`datahub` (live GMS). All normalize into the same `MetadataGraph`, so detection
+is identical regardless of source.
 
 ---
 

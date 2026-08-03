@@ -1,6 +1,6 @@
-"""Airgap remediation for AIRGAP-R1-002 — Untagged PII propagation into acme.analytics.tmp_user_export
+"""Airgap remediation for AIRGAP-R1-002 — Untagged PII propagation into acme.marketing.marketing_enriched
 
-Severity: MEDIUM
+Severity: CRITICAL
 Review, then run against your DataHub instance.
 Requires: pip install acryl-datahub
 """
@@ -23,10 +23,10 @@ emitter = DatahubRestEmitter(gms_server=GMS, token=TOKEN)
 
 PII_TAG = "urn:li:tag:PII"
 SENSITIVE_TERM = "urn:li:glossaryTerm:Classification.Sensitive"
-DATASET_URN = "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.analytics.tmp_user_export,PROD)"
+DATASET_URN = "urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.marketing.marketing_enriched,PROD)"
 
 # Propagate classification onto the leaked field(s) so PII stays governed.
-LEAKED_FIELDS = ['email']
+LEAKED_FIELDS = ['email', 'name']
 
 for field_path in LEAKED_FIELDS:
     field_urn = f"urn:li:schemaField:({DATASET_URN},{field_path})"

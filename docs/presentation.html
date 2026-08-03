@@ -157,7 +157,7 @@
     <div class="kicker">How it works</div>
     <h2 style="color:#fff">One pipeline, fully offline</h2>
     <div class="pipe">
-      <div class="step"><h3>Source</h3><small>DataHub GraphQL — or bundled fixture</small></div>
+      <div class="step"><h3>Source</h3><small>Live DataHub, local DataHub Lite, or fixture</small></div>
       <div class="arrow">→</div>
       <div class="step"><h3>Normalize</h3><small>One source-agnostic MetadataGraph</small></div>
       <div class="arrow">→</div>
@@ -179,7 +179,7 @@
       <div class="tile"><h3>Normalize</h3><p>Map responses into Asset / Field / LineageEdge; split <code>schemaField</code> URNs so columns line up with lineage.</p></div>
       <div class="tile"><h3>Write back</h3><p>Emit <code>acryl-datahub</code> SDK code to re-tag fields or assign owners — reviewed, then merged.</p></div>
     </div>
-    <p class="lead" style="margin-top:1.6rem">Read-only against your instance. The fixture mirrors DataHub's exact URN &amp; schema model.</p>
+    <p class="lead" style="margin-top:1.6rem">Proven against a <b>real local DataHub</b> (DataHub Lite) — no Docker, no cloud. Same detection on live GMS or fixture.</p>
   </section>
 
   <!-- 7 DETECTION -->
@@ -196,7 +196,7 @@
 
   <!-- 8 RESULTS -->
   <section class="slide bg-paper">
-    <div class="kicker">Results · Acme catalog</div>
+    <div class="kicker">Results · live local DataHub (DataHub Lite)</div>
     <h2>5 leaks found, ranked by blast radius</h2>
     <div class="lin">
       <span class="node">users</span><span class="a">→</span>

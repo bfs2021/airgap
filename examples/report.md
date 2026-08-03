@@ -1,6 +1,6 @@
 # Airgap Governance Audit
 
-> Local-first PII lineage audit · source: `fixture` · generated 2026-08-03 18:28 UTC
+> Local-first PII lineage audit · source: `datahub-lite` · generated 2026-08-03 19:14 UTC
 
 _All analysis ran locally. No metadata was sent to any cloud service._
 
@@ -15,7 +15,7 @@ _All analysis ran locally. No metadata was sent to any cloud service._
 
 ## Findings
 
-### 🔴 AIRGAP-R1-001 — Untagged PII propagation into acme.marketing.marketing_enriched
+### 🔴 AIRGAP-R1-002 — Untagged PII propagation into acme.marketing.marketing_enriched
 
 - **Severity:** CRITICAL
 - **Rule:** R1
@@ -23,7 +23,7 @@ _All analysis ran locally. No metadata was sent to any cloud service._
 - **Leaked fields:** email, name
 - **Blast radius:** 1 downstream consumer(s) {'dashboard': 1}
 
-> The finding indicates that personally identifiable information (PII) such as email and name are being propagated into the `acme.marketing.marketing_enriched` dataset without proper tagging, which violates data governance rules. This is a critical risk under GDPR as it could lead to unauthorized processing of personal data. The urgency is high due to the severity marked as CRITICAL and the potential exposure through one downstream consumer (dashboard).
+> The finding indicates that personally identifiable information (PII) such as email and name are being propagated into the `acme.marketing.marketing_enriched` dataset without proper tagging, which violates data governance rules. This is a critical compliance/privacy risk under GDPR, as it exposes sensitive user data unnecessarily. The urgency is high due to the severity marked as CRITICAL and the potential for this data to be accessed by one downstream consumer (the dashboard).
 
 **Lineage evidence:**
 
@@ -42,7 +42,7 @@ _All analysis ran locally. No metadata was sent to any cloud service._
 - **Leaked fields:** phone_raw
 - **Blast radius:** 1 downstream consumer(s) {'chart': 1}
 
-> The finding indicates that sensitive PII, specifically `phone_raw`, is being propagated into the `acme.ml.churn_features` dataset without proper tagging. This violates GDPR requirements for data minimization and transparency. The critical severity and immediate impact on downstream consumers make this a high-priority issue that needs urgent attention to prevent potential privacy breaches.
+> The finding indicates that sensitive PII (Personal Identifiable Information) in the form of `phone_raw` is being propagated into the `acme.ml.churn_features` dataset without proper tagging. This violates GDPR requirements for data minimization and transparency, as it exposes personal phone numbers in a machine learning feature set. The critical severity and immediate downstream consumption by one chart make this an urgent risk that needs to be addressed quickly to prevent potential privacy breaches and compliance issues.
 
 **Lineage evidence:**
 
@@ -59,7 +59,7 @@ _All analysis ran locally. No metadata was sent to any cloud service._
 - **Asset:** `urn:li:dataset:(urn:li:dataPlatform:snowflake,acme.marketing.marketing_enriched,PROD)`
 - **Blast radius:** 1 downstream consumer(s) {'dashboard': 1}
 
-> The asset `acme.marketing.marketing_enriched` contains sensitive data, including PII, with no assigned owner. This lack of ownership and the fact that it is consumed by a dashboard make it a critical compliance risk under GDPR, as there must be clear accountability for handling personal data. Immediate action is required to assign an owner and ensure proper governance.
+> The asset `acme.marketing.marketing_enriched` contains sensitive data, including PII, with no assigned owner. This lack of ownership and oversight poses a critical compliance risk under GDPR, as it could lead to unauthorized access or misuse of personal data. The urgency is high due to the severity marked as CRITICAL and the potential exposure through one downstream consumer (the dashboard).
 
 **Lineage evidence:**
 
@@ -77,7 +77,7 @@ _All analysis ran locally. No metadata was sent to any cloud service._
 - **Leaked fields:** phone
 - **Blast radius:** 1 downstream consumer(s) {'dataset': 1}
 
-> The finding shows that sensitive PII (phone numbers) are being propagated into the `acme.analytics.user_backfill` dataset without proper tagging, which violates data governance rules. This is a high-severity risk under GDPR as it could lead to unauthorized processing of personal data. Immediate action is required to address this issue and ensure compliance.
+> The finding indicates that sensitive PII (phone numbers) are being propagated into the `acme.analytics.user_backfill` dataset without proper tagging, which violates data governance rules. This is a high-severity risk under GDPR as it could lead to unauthorized processing of personal data. Immediate action is required to address this issue and ensure compliance.
 
 **Lineage evidence:**
 
@@ -87,7 +87,7 @@ _All analysis ran locally. No metadata was sent to any cloud service._
 
 ---
 
-### 🟡 AIRGAP-R1-002 — Untagged PII propagation into acme.analytics.tmp_user_export
+### 🟡 AIRGAP-R1-001 — Untagged PII propagation into acme.analytics.tmp_user_export
 
 - **Severity:** MEDIUM
 - **Rule:** R1
@@ -95,7 +95,7 @@ _All analysis ran locally. No metadata was sent to any cloud service._
 - **Leaked fields:** email
 - **Blast radius:** 0 downstream consumer(s) 
 
-> The finding shows that personally identifiable information (PII) in the form of emails is being propagated into `acme.analytics.tmp_user_export` without proper tagging, which could lead to a compliance risk under GDPR. This needs attention as it may expose sensitive data unnecessarily, and addressing this should be prioritized to avoid potential legal issues.
+> The finding indicates that personally identifiable information (PII) in the form of email addresses is being propagated into `acme.analytics.tmp_user_export` without proper tagging, which could lead to compliance issues under GDPR. This is a medium-severity risk because it involves handling PII, and urgent attention is needed to ensure this data is properly managed and protected.
 
 **Lineage evidence:**
 

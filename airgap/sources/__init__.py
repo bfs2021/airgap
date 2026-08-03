@@ -1,8 +1,15 @@
 from airgap.sources.base import MetadataSource
 from airgap.sources.fixture import FixtureSource
 from airgap.sources.datahub import DataHubSource
+from airgap.sources.datahub_lite import DataHubLiteSource
 
-__all__ = ["MetadataSource", "FixtureSource", "DataHubSource", "build_source"]
+__all__ = [
+    "MetadataSource",
+    "FixtureSource",
+    "DataHubSource",
+    "DataHubLiteSource",
+    "build_source",
+]
 
 
 def build_source(cfg: dict) -> MetadataSource:
@@ -10,6 +17,8 @@ def build_source(cfg: dict) -> MetadataSource:
     kind = cfg.get("source", "fixture")
     if kind == "fixture":
         return FixtureSource(cfg["fixture_path"])
+    if kind == "datahub-lite":
+        return DataHubLiteSource(datahub_bin=cfg.get("datahub_lite", {}).get("bin"))
     if kind == "datahub":
         dh = cfg.get("datahub", {})
         return DataHubSource(
@@ -17,4 +26,6 @@ def build_source(cfg: dict) -> MetadataSource:
             token=dh.get("token", ""),
             lineage_depth=int(dh.get("lineage_depth", 4)),
         )
-    raise ValueError(f"Unknown source: {kind!r} (expected 'fixture' or 'datahub')")
+    raise ValueError(
+        f"Unknown source: {kind!r} (expected 'fixture', 'datahub-lite', or 'datahub')"
+    )

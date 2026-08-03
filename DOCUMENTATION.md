@@ -163,12 +163,28 @@ finding — emitting `GlobalTagsClass` / `GlossaryTermsClass` on the leaked fiel
 (R1) or `OwnershipClass` on the ownerless asset (R2). These artifacts are
 designed to drop straight into a pull request.
 
-### 5.6 The fixture mirrors DataHub exactly
-Because the hosted demo (`demo.datahub.com`) is now behind SSO, the default
-source is a **synthetic fixture** (`fixtures/acme_datalake.json`) that uses the
-*same URN format, schema-field shape, tag/glossary model, and lineage edges* as
-real DataHub. This guarantees the detection code is exercised identically to a
-live run, and lets judges reproduce everything with zero setup.
+### 5.6 Three sources, one model
+Airgap has three interchangeable metadata sources, all normalizing into the same
+`MetadataGraph`:
+
+1. **`datahub-lite` — a real, local, Docker-free DataHub.** This is the primary
+   integration for reproducibility. `scripts/setup_datahub_lite.sh` installs
+   [DataHub Lite](https://docs.datahub.com/docs/datahub-lite) (a DuckDB-backed
+   DataHub), converts the Acme fixture into genuine DataHub metadata aspects via
+   the official SDK (`scripts/seed_datahub_lite.py` — `SchemaMetadata`,
+   `GlobalTags`, `GlossaryTerms`, `Ownership`, `UpstreamLineage` with
+   `FineGrainedLineage`, `DashboardInfo`/`ChartInfo`), and imports them.
+   `DataHubLiteSource` then reads them back through the `datahub lite` CLI. This
+   proves Airgap runs against real DataHub metadata with **no Docker and no
+   cloud** — the whole point of a local-first tool.
+2. **`datahub` — live GMS** via GraphQL (§5.1–5.4), for any hosted instance.
+3. **`fixture` — synthetic**, zero-setup, using the *same URN format and schema
+   model* as real DataHub. Useful for a dependency-free demo and as the seed for
+   DataHub Lite.
+
+Because all three produce an identical `MetadataGraph`, the detection engine is
+exercised the same way regardless of source — the synthetic fixture and the real
+DataHub Lite instance yield the **same five findings**.
 
 ---
 

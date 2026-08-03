@@ -144,7 +144,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     a = sub.add_parser("audit", help="Run a governance audit.")
     a.add_argument("--config", default=_DEFAULT_CONFIG, help="Path to config.yaml")
-    a.add_argument("--source", choices=["fixture", "datahub"], help="Override source")
+    a.add_argument(
+        "--source",
+        choices=["fixture", "datahub-lite", "datahub"],
+        help="Override source",
+    )
     a.add_argument("--url", help="DataHub URL (for --source datahub)")
     a.add_argument("--token", help="DataHub access token")
     a.add_argument("--model", help="Override Ollama model")
