@@ -1,4 +1,4 @@
-# PRD — Sentinel
+# PRD — AirGap
 
 > **Local-first Veri Governance & PII Lineage Denetçisi**
 > DataHub Agent Hackathon · Wildcard (Regulatory Automation) · v0.1 (taslak)
@@ -6,7 +6,7 @@
 
 ---
 
-## 1. Tek Cümlede
+## 1. Info 
 
 DataHub'daki metadata'yı (PII/hassas tag'ler, glossary term'leri, column-level sınıflandırma, lineage, ownership) okuyup **hassas verinin downstream'de etiketsiz / sahipsiz / politikasız yerlere sızdığı "governance leak"leri** tespit eden; bulguları **tamamen local (Ollama)** bir agent ile insan diline çevirip önceliklendirilmiş risk raporu + düzeltme artefaktları üreten bir araç.
 
@@ -27,7 +27,7 @@ Modern veri stack'inde PII bir yerde doğru etiketlenir (ör. `users.email` → 
 
 ## 3. Çözüm & Değer Önermesi
 
-**Sentinel** DataHub'ı context kaynağı olarak kullanır, lineage'ı programatik olarak gezer, PII yayılımını izler ve ihlalleri bulur. Yorumlama/raporlama katmanı **local Ollama** ile çalışır → **hiçbir metadata makineyi terk etmez.**
+**AirGap** DataHub'ı context kaynağı olarak kullanır, lineage'ı programatik olarak gezer, PII yayılımını izler ve ihlalleri bulur. Yorumlama/raporlama katmanı **local Ollama** ile çalışır → **hiçbir metadata makineyi terk etmez.**
 
 Fark yaratan tek cümle: **"Gizliliği denetleyen aracın kendisi de gizli."**
 
@@ -61,7 +61,7 @@ Fark yaratan tek cümle: **"Gizliliği denetleyen aracın kendisi de gizli."**
 
 ---
 
-## 6. Ne Bekliyoruz (Başarı Kriterleri)
+## 6. Başarı Kriterleri 
 
 - **S1 (fonksiyonel):** Demo katalogda en az 3 gerçek governance leak'i doğru tespit edip lineage yoluyla açıklayabiliyor.
 - **S2 (local):** Uçtan uca çalışma sırasında ağ trafiği yalnızca DataHub API'sine; LLM çağrılarının tamamı localhost:11434 (Ollama).
@@ -146,22 +146,11 @@ Her kural: `severity` (blast-radius = etkilenen downstream sayısı × consumer 
 
 ---
 
-## 10. Demo Senaryosu (video kurgusu)
-
-1. Problemi 15 sn'de anlat (PII sızıntısı + cloud LLM ikilemi).
-2. `sentinel audit` çalıştır → terminalde bulgular akıyor.
-3. `report.md` aç → önceliklendirilmiş 3 ihlal, blast-radius, lineage kanıtı.
-4. `lineage_graph.html` aç → kırmızı vurgulu sızıntı yolu.
-5. Bir düzeltme patch'ini göster.
-6. Kapanış: "Tüm LLM çağrıları localde — hiçbir metadata dışarı çıkmadı" (network log ile kanıt).
-
----
-
-## 11. 2 Günlük Plan (sıkı kapsam)
+## 10. Kapsam 
 
 **Kapsam kararı:** P0 özellikler + görsel grafik hedef. R3/R4 kuralları (§8 P2) ve CI modu **stretch** — sadece zaman kalırsa. Deterministik çekirdek her koşulda çalışır; LLM ve görsel katman üstüne biner.
 
-### Gün 1 — Veri + Tespit (çekirdek çalışıyor, LLM'siz bile değer üretir)
+### 1 — Veri + Tespit 
 
 | ID | Task | Done-criteria (DoD) |
 |---|---|---|
@@ -170,9 +159,9 @@ Her kural: `severity` (blast-radius = etkilenen downstream sayısı × consumer 
 | T1.3 | **Fetch + normalize katmanı** — dataset, field-level tag/glossary, owners, lineage edge'leri → dataclass model | `fetch.py` bir domain için normalize graph (nodes+edges) döndürüyor |
 | T1.4 | **Tespit çekirdeği R1 + R2 + severity** — untagged PII propagation + ownerless sensitive; blast-radius = downstream sayısı | `findings.json` üretiliyor; fixture/gerçek veride ≥1 gerçek leak yakalanıyor |
 
-**Gün 1 çıktısı:** LLM olmadan bile `sentinel audit` çalışıp `findings.json` üretiyor.
+**1 çıktısı:** LLM olmadan bile `sentinel audit` çalışıp `findings.json` üretiyor.
 
-### Gün 2 — Yorumlama + Çıktı + Teslim
+###  2 — Yorumlama + Çıktı + Teslim
 
 | ID | Task | Done-criteria (DoD) |
 |---|---|---|
@@ -186,7 +175,7 @@ Her kural: `severity` (blast-radius = etkilenen downstream sayısı × consumer 
 
 ---
 
-## 12. Riskler & Önlemler
+## 11. Riskler & Önlemler
 
 | Risk | Önlem |
 |---|---|
@@ -197,9 +186,4 @@ Her kural: `severity` (blast-radius = etkilenen downstream sayısı × consumer 
 
 ---
 
-## 13. Açık Sorular
 
-- [ ] Proje adı kesin mi? ("Sentinel" jenerik — alternatif: **PIItrail**, **Warden**, **LineageGuard**)
-- [ ] Hosted demo yazmaya izin veriyor mu, yoksa tüm yazımlar artefakt mı kalacak? (Gün 1'de netleşecek)
-- [ ] Hangi Ollama modeli kurulu? (llama3.1:8b öneriliyor)
-- [ ] Repo nerede barınacak — kişisel GitHub hesabı?
