@@ -34,6 +34,28 @@ audit runs offline.
 
 ---
 
+## Demo & media
+
+![Airgap lineage leak map](docs/media/leak_map.png)
+
+*Airgap's leak map — red paths are where PII escapes, ranked by blast radius. Generated from a **real, local DataHub Lite** run (no Docker, no cloud).*
+
+- 🎬 **Demo film** (self-playing walkthrough) — [open live ↗](https://htmlpreview.github.io/?https://github.com/zelihaguven/airgap/blob/main/docs/demo_film.html)
+- 🗺️ **Interactive leak map** — [open live ↗](https://htmlpreview.github.io/?https://github.com/zelihaguven/airgap/blob/main/examples/lineage_graph.html)
+- 🖥️ **Slide deck** — [open live ↗](https://htmlpreview.github.io/?https://github.com/zelihaguven/airgap/blob/main/docs/presentation.html)
+- ▶️ **Video walkthrough** — _add your YouTube link here_
+- 📝 [Project writeup](docs/DEVPOST.md) · 🎥 [video script](docs/VIDEO_SCRIPT.md)
+
+<p align="center">
+  <img src="docs/media/hero.png" width="32%" alt="Airgap">
+  <img src="docs/media/findings.png" width="32%" alt="5 governance leaks found">
+  <img src="docs/media/architecture.png" width="32%" alt="How Airgap works">
+</p>
+
+All media assets live in [`docs/media/`](docs/media).
+
+---
+
 ## Quickstart
 
 ```bash
