@@ -1,0 +1,35 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1600px;height:900px;overflow:hidden}
+  .f{width:1600px;height:900px;background:#0E0E0E;position:relative;
+     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+     padding:90px 110px;display:flex;flex-direction:column;justify-content:center}
+  .tag{font-size:18px;letter-spacing:.3em;text-transform:uppercase;font-weight:700;color:#F5D061;margin-bottom:22px}
+  h2{font-family:Georgia,serif;font-size:76px;color:#fff;letter-spacing:-.015em;margin-bottom:60px}
+  .pipe{display:flex;align-items:stretch;gap:0}
+  .step{flex:1;border:2px solid #2b2b31;border-radius:18px;padding:30px 26px;margin:6px}
+  .step h3{color:#fff;font-size:27px;margin-bottom:10px}
+  .step small{color:#9a9aa0;font-size:19px;line-height:1.35;display:block}
+  .arrow{align-self:center;color:#F5D061;font-size:44px;font-weight:800;padding:0 6px}
+  .note{margin-top:56px;font-size:30px;color:#cfcfcf;max-width:60ch;line-height:1.4}
+  .note b{color:#F5D061}
+  .shield{position:absolute;top:70px;right:110px;font-size:60px;opacity:.85}
+</style></head><body>
+<div class="f">
+  <div class="shield">🛡️</div>
+  <div class="tag">How Airgap works · fully offline</div>
+  <h2>One pipeline, nothing leaves the machine</h2>
+  <div class="pipe">
+    <div class="step"><h3>Source</h3><small>Live DataHub, local DataHub Lite, or fixture</small></div>
+    <div class="arrow">→</div>
+    <div class="step"><h3>Normalize</h3><small>One source-agnostic MetadataGraph</small></div>
+    <div class="arrow">→</div>
+    <div class="step"><h3>Detect</h3><small>R1 / R2 rules + blast-radius severity</small></div>
+    <div class="arrow">→</div>
+    <div class="step"><h3>Explain</h3><small>Local Ollama · localhost only</small></div>
+    <div class="arrow">→</div>
+    <div class="step"><h3>Emit</h3><small>JSON · report · leak map · SDK patches</small></div>
+  </div>
+  <div class="note"><b>Deterministic detection</b> makes results reproducible; the local LLM only explains them — so it is safe to run on real, sensitive catalogs.</div>
+</div>
+</body></html>

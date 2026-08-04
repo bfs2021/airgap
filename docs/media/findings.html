@@ -1,0 +1,39 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1600px;height:900px;overflow:hidden}
+  .f{width:1600px;height:900px;background:#fff;position:relative;
+     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+     padding:80px 110px;display:flex;flex-direction:column;justify-content:center}
+  .tag{font-size:18px;letter-spacing:.28em;text-transform:uppercase;font-weight:700;color:#a07c00;margin-bottom:20px}
+  h2{font-family:Georgia,serif;font-size:74px;color:#0E0E0E;letter-spacing:-.015em;margin-bottom:44px}
+  .lin{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:34px}
+  .node{border:2px solid #cbd5e1;border-radius:12px;padding:16px 22px;font-size:24px;font-weight:700;color:#1a1a1a;background:#fff}
+  .node.crit{border-color:#e5484d;box-shadow:0 0 0 4px rgba(229,72,77,.14)}
+  .a{color:#e5484d;font-weight:800;font-size:30px}
+  .g{color:#c7c9d1;font-weight:800;font-size:30px}
+  .chips{display:flex;gap:16px;margin-bottom:34px}
+  .chip{font-size:26px;font-weight:800;padding:12px 26px;border-radius:999px;color:#fff}
+  .c1{background:#e5484d}.c2{background:#f76b15}.c3{background:#ffb224;color:#0E0E0E}
+  p{font-size:30px;line-height:1.45;color:#555;max-width:64ch}
+  p b{color:#0E0E0E}
+  .shield{position:absolute;top:70px;right:110px;font-size:60px}
+</style></head><body>
+<div class="f">
+  <div class="shield">🛡️</div>
+  <div class="tag">Results · audited a real local DataHub (DataHub Lite)</div>
+  <h2>5 PII governance leaks, ranked by blast radius</h2>
+  <div class="lin">
+    <span class="node">users</span><span class="a">→</span>
+    <span class="node">stg_users</span><span class="a">→</span>
+    <span class="node">dim_customer</span><span class="a">→</span>
+    <span class="node crit">marketing_enriched</span>
+    <span class="g">→</span><span class="node">Campaign Dashboard</span>
+  </div>
+  <div class="chips">
+    <span class="chip c1">CRITICAL ×3</span>
+    <span class="chip c2">HIGH ×1</span>
+    <span class="chip c3">MEDIUM ×1</span>
+  </div>
+  <p>Each finding ships with its full <b>lineage evidence path</b>, a <b>local-LLM explanation</b>, and a <b>ready-to-run DataHub SDK fix</b> — plus an offline visual leak map.</p>
+</div>
+</body></html>

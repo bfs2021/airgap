@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Airgap — Demo Film</title>
+<style>
+  :root{
+    --butter:#F5D061; --butter-soft:#FBEFC2; --ink:#0E0E0E; --paper:#FFFFFF;
+    --muted:#8a8a8a; --crit:#e5484d; --high:#f76b15; --med:#ffb224;
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#000;font-family:var(--sans)}
+  #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#000}
+  /* 16:9 stage */
+  #stage{position:relative;width:min(100vw,177.78vh);height:min(56.25vw,100vh);
+    background:var(--ink);overflow:hidden}
+  .scene{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+    padding:7% 8%;opacity:0;transition:opacity .6s ease;pointer-events:none}
+  .scene.active{opacity:1}
+  .paper{background:var(--paper)}
+  .butter{background:var(--butter)}
+
+  .kicker{font-size:1.4vh;letter-spacing:.3em;text-transform:uppercase;font-weight:700;color:var(--butter);margin-bottom:2.2vh}
+  .paper .kicker{color:#a07c00}.butter .kicker{color:#7a5c00}
+  h1{font-family:var(--serif);color:#fff;font-size:12vh;line-height:.95;letter-spacing:-.02em}
+  .paper h1{color:var(--ink)}
+  h2{font-family:var(--serif);font-size:6vh;line-height:1.05;color:#fff;letter-spacing:-.015em}
+  .paper h2{color:var(--ink)}.butter h2{color:var(--ink)}
+  .lead{font-size:2.6vh;line-height:1.5;color:#cfcfcf;max-width:44ch;margin-top:2vh}
+  .paper .lead{color:#555}.butter .lead{color:#5c4600}
+  .bar{width:7vh;height:1vh;background:var(--butter);margin:2.4vh 0}
+  .butter .bar{background:var(--ink)}
+  .em{background:var(--butter);color:var(--ink);padding:0 .1em}
+  .quote{font-family:var(--serif);font-size:7vh;line-height:1.1;font-weight:700;color:var(--ink);max-width:17ch;letter-spacing:-.02em}
+
+  ul.pts{list-style:none;margin-top:1vh;display:flex;flex-direction:column;gap:1.6vh}
+  ul.pts li{font-size:2.7vh;line-height:1.4;color:#333;padding-left:2.4vh;position:relative;opacity:0;transform:translateY(8px);transition:all .5s}
+  ul.pts li.show{opacity:1;transform:none}
+  ul.pts li::before{content:"";position:absolute;left:0;top:.5em;width:1.4vh;height:1.4vh;background:var(--butter);border-radius:3px}
+
+  /* terminal */
+  .term{width:100%;height:100%;background:#0b0b0f;border-radius:1.4vh;border:1px solid #26262c;
+    font-family:var(--mono);font-size:2.15vh;line-height:1.55;color:#e7e7ea;padding:2.4vh 2.8vh;overflow:hidden;
+    box-shadow:0 3vh 8vh rgba(0,0,0,.5)}
+  .term .dots{display:flex;gap:1vh;margin-bottom:1.8vh}
+  .term .dots i{width:1.4vh;height:1.4vh;border-radius:50%;display:block}
+  .dots i:nth-child(1){background:#ff5f56}.dots i:nth-child(2){background:#ffbd2e}.dots i:nth-child(3){background:#27c93f}
+  .line{white-space:pre-wrap;opacity:0}
+  .line.show{opacity:1}
+  .prompt{color:#6ee7b7}.cmd{color:#fff}
+  .dim{color:#8a8a8a}.cyan{color:#67e8f9}.crit{color:#ff6b6f;font-weight:700}
+  .high{color:#ffa657;font-weight:700}.med{color:#ffd166;font-weight:700}
+  .cursor{display:inline-block;width:1.1ch;background:#e7e7ea;animation:blink 1s steps(1) infinite;color:transparent}
+  @keyframes blink{50%{opacity:0}}
+
+  /* finding card */
+  .card{background:var(--paper);border-radius:1.6vh;padding:3vh 3.4vh;box-shadow:0 3vh 8vh rgba(0,0,0,.5);border-left:1vh solid var(--crit)}
+  .card .sev{display:inline-block;background:var(--crit);color:#fff;font-weight:800;font-size:1.5vh;padding:.5vh 1.4vh;border-radius:999px;letter-spacing:.08em}
+  .card h3{font-size:3.2vh;margin:1.4vh 0 .6vh;color:var(--ink);font-family:var(--serif)}
+  .card .path{font-family:var(--mono);font-size:1.8vh;background:var(--butter-soft);color:#5a4700;padding:1.4vh 1.6vh;border-radius:1vh;margin:1.6vh 0;line-height:1.7}
+  .card .exp{font-size:2.1vh;color:#444;line-height:1.5}
+  .card .rem{font-size:1.9vh;color:#1a1a1a;margin-top:1.4vh}
+  .card .rem b{color:#a07c00}
+
+  /* leak map svg */
+  svg.map{width:100%;height:78%}
+  .node rect{fill:#fff;stroke:#c8ccd6;stroke-width:2;rx:8}
+  .node.leak rect{stroke:var(--crit);stroke-width:3}
+  .node.high rect{stroke:var(--high);stroke-width:3}
+  .node.med rect{stroke:var(--med);stroke-width:3}
+  .node text{font-family:var(--sans);font-size:13px;font-weight:700;fill:#1a1a1a}
+  .node tspan.sub{font-size:10px;font-weight:500;fill:#8a8a8a}
+  .edge{stroke:#cfd3dd;stroke-width:2.5;fill:none}
+  .edge.red{stroke:var(--crit);stroke-width:3.5}
+  .draw{stroke-dasharray:600;stroke-dashoffset:600;transition:stroke-dashoffset 1.1s ease}
+  .draw.on{stroke-dashoffset:0}
+
+  /* code */
+  pre.code{background:#0b0b0f;border-radius:1.4vh;border:1px solid #26262c;padding:2.6vh;font-family:var(--mono);
+    font-size:1.9vh;line-height:1.6;color:#e7e7ea;overflow:hidden;box-shadow:0 3vh 8vh rgba(0,0,0,.5)}
+  pre .k{color:#c792ea}.pre .s{color:#c3e88d}pre .s{color:#c3e88d}pre .c{color:#7a7a7a}pre .f{color:#82aaff}
+
+  .wifi{display:flex;align-items:center;gap:2vh;margin-top:1vh}
+  .wifi .x{font-size:9vh}
+  .center{align-items:center;text-align:center}
+  .repo{font-family:var(--mono);color:var(--butter);font-size:2.4vh;margin-top:1vh}
+
+  /* chrome */
+  #progress{position:absolute;bottom:0;left:0;height:.7vh;background:var(--butter);width:0;z-index:20}
+  #cap{position:absolute;bottom:2.4vh;left:0;right:0;text-align:center;color:#fff;font-size:1.8vh;z-index:20;opacity:.0;transition:opacity .4s}
+  #cap.show{opacity:.9}
+  #play{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:var(--ink);z-index:40;cursor:pointer;gap:2vh}
+  #play h1{font-size:9vh}
+  #play .btn{font-family:var(--sans);font-size:2.4vh;font-weight:700;color:var(--ink);background:var(--butter);
+    padding:1.6vh 3.4vh;border-radius:999px}
+  #play .hint{color:var(--muted);font-size:1.7vh}
+  #replay{position:absolute;bottom:2.2vh;right:2.6vh;z-index:30;background:rgba(255,255,255,.1);color:#fff;
+    border:1px solid #333;border-radius:999px;padding:1vh 2vh;font-size:1.6vh;cursor:pointer;display:none}
+  .logo{position:absolute;top:2.4vh;left:2.8vh;font-family:var(--serif);font-weight:700;color:var(--butter);font-size:2vh;z-index:15;opacity:.85}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <div class="logo">🛡️ Airgap</div>
+
+  <!-- S1 title -->
+  <section class="scene center" id="s1" style="align-items:flex-start;text-align:left">
+    <div class="kicker">DataHub Agent Hackathon · Wildcard</div>
+    <h1>Airgap</h1>
+    <div class="bar"></div>
+    <div class="lead">A local-first data governance &amp; PII lineage auditor for DataHub.</div>
+  </section>
+
+  <!-- S2 problem -->
+  <section class="scene paper" id="s2">
+    <div class="kicker">The problem</div>
+    <h2>PII is tagged at the source.<br>Then lineage forgets.</h2>
+    <ul class="pts">
+      <li>Classified data flows downstream — and loses its classification.</li>
+      <li>It lands untagged, in assets nobody owns.</li>
+      <li>Automate the audit with a cloud LLM, and you leak the very data you protect.</li>
+    </ul>
+  </section>
+
+  <!-- S3 real datahub -->
+  <section class="scene" id="s3">
+    <div class="term" id="t3">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <div class="line"><span class="prompt">$</span> <span class="cmd">datahub lite list-urns</span></div>
+      <div class="line dim">urn:li:dataset:(…postgres,acme.public.users,PROD)</div>
+      <div class="line dim">urn:li:dataset:(…snowflake,acme.analytics.dim_customer,PROD)</div>
+      <div class="line dim">urn:li:dataset:(…snowflake,acme.marketing.marketing_enriched,PROD)</div>
+      <div class="line dim">urn:li:dataset:(…feast,acme.ml.churn_features,PROD)</div>
+      <div class="line dim">urn:li:dashboard:(looker,acme.marketing_campaign)</div>
+      <div class="line dim">urn:li:chart:(looker,acme.churn_risk)   <span class="cyan">… 11 entities</span></div>
+      <div class="line"><span class="cyan"># A real DataHub — running locally. No Docker.</span></div>
+    </div>
+  </section>
+
+  <!-- S4 audit -->
+  <section class="scene" id="s4">
+    <div class="term" id="t4">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <div class="line"><span class="prompt">$</span> <span class="cmd">airgap audit --source datahub-lite</span></div>
+      <div class="line dim">  · Fetching metadata from source: datahub-lite</div>
+      <div class="line dim">  · Loaded 11 assets, 10 lineage edges, 12 column-level edges</div>
+      <div class="line dim">  · Detection complete: 5 finding(s)</div>
+      <div class="line dim">  · Explaining findings locally via Ollama (qwen2.5:7b)…</div>
+      <div class="line">&nbsp;</div>
+      <div class="line"><span class="crit">CRITICAL</span> AIRGAP-R1-002  Untagged PII → acme.marketing.marketing_enriched</div>
+      <div class="line"><span class="crit">CRITICAL</span> AIRGAP-R1-003  Untagged PII → acme.ml.churn_features</div>
+      <div class="line"><span class="crit">CRITICAL</span> AIRGAP-R2-001  Ownerless sensitive asset: marketing_enriched</div>
+      <div class="line"><span class="high">HIGH    </span> AIRGAP-R1-004  Untagged PII → acme.analytics.user_backfill</div>
+      <div class="line"><span class="med">MEDIUM  </span> AIRGAP-R1-001  Untagged PII → acme.analytics.tmp_user_export</div>
+    </div>
+  </section>
+
+  <!-- S5 finding card -->
+  <section class="scene butter" id="s5">
+    <div class="card">
+      <span class="sev">🔴 CRITICAL · AIRGAP-R1-002</span>
+      <h3>Untagged PII propagation into marketing_enriched</h3>
+      <div class="path">users.email → stg_users.email → dim_customer.email → <b>marketing_enriched.email</b> ⚠ untagged</div>
+      <div class="exp">Email &amp; name reach a marketing dataset with no PII classification, exposed to a Looker dashboard — a GDPR risk. Explained by a local model.</div>
+      <div class="rem"><b>Fix:</b> propagate the PII tag &amp; glossary term to the leaked fields, or mask before this asset.</div>
+    </div>
+  </section>
+
+  <!-- S6 leak map -->
+  <section class="scene paper" id="s6">
+    <div class="kicker">The leak map</div>
+    <svg class="map" viewBox="0 0 1000 380" id="map">
+      <path class="edge draw" id="e1" d="M175,70 H350"/>
+      <path class="edge red draw" id="e3" d="M475,70 C575,70 575,175 675,175"/>
+      <path class="edge red draw" id="e4" d="M475,70 C575,70 575,270 675,270"/>
+      <path class="edge red draw" id="e5" d="M475,70 C575,70 575,335 675,335"/>
+      <g class="node" transform="translate(50,45)"><rect width="125" height="50" rx="8"/><text x="12" y="24">users<tspan class="sub" x="12" y="40">postgres</tspan></text></g>
+      <g class="node" transform="translate(350,45)"><rect width="125" height="50" rx="8"/><text x="12" y="24">dim_customer<tspan class="sub" x="12" y="40">snowflake</tspan></text></g>
+      <g class="node leak" transform="translate(675,150)"><rect width="170" height="50" rx="8"/><text x="12" y="24">marketing_enriched<tspan class="sub" x="12" y="40">CRITICAL</tspan></text></g>
+      <g class="node high" transform="translate(675,245)"><rect width="170" height="50" rx="8"/><text x="12" y="24">user_backfill<tspan class="sub" x="12" y="40">HIGH</tspan></text></g>
+      <g class="node med" transform="translate(675,310)"><rect width="170" height="50" rx="8"/><text x="12" y="24">tmp_user_export<tspan class="sub" x="12" y="40">MEDIUM</tspan></text></g>
+    </svg>
+    <div class="lead" style="margin-top:0">Red is where PII leaks. Ranked by blast radius — which reach BI dashboards.</div>
+  </section>
+
+  <!-- S7 patch -->
+  <section class="scene" id="s7">
+    <div class="kicker" style="margin-left:8%">Remediation · ready for a PR</div>
+    <pre class="code"><span class="c"># Airgap-generated DataHub SDK fix — AIRGAP-R1-002</span>
+<span class="k">for</span> field <span class="k">in</span> [<span class="s">"email"</span>, <span class="s">"name"</span>]:
+    field_urn = <span class="f">make_schema_field_urn</span>(DATASET_URN, field)
+    emitter.<span class="f">emit</span>(<span class="f">MetadataChangeProposalWrapper</span>(
+        entityUrn=field_urn,
+        aspect=<span class="f">GlobalTagsClass</span>(tags=[<span class="f">TagAssociationClass</span>(tag=PII_TAG)]),
+    ))
+    <span class="c"># + Classification.Sensitive glossary term</span></pre>
+  </section>
+
+  <!-- S8 wifi proof -->
+  <section class="scene center" id="s8">
+    <div class="kicker">The proof</div>
+    <div class="wifi"><span class="x">📶✕</span><h2 style="color:#fff">Wi-Fi off. Still works.</h2></div>
+    <div class="lead" style="text-align:center;max-width:40ch">Reads the local DataHub, detects the leaks, the local model still explains them. Nothing ever leaves the machine.</div>
+  </section>
+
+  <!-- S9 end -->
+  <section class="scene center" id="s9">
+    <div class="quote" style="color:#fff;text-align:center">An air-gapped auditor for the data you <span class="em">can't afford to leak.</span></div>
+    <div class="bar" style="margin:3vh auto"></div>
+    <div class="repo">github.com/zelihaguven/airgap</div>
+  </section>
+
+  <div id="progress"></div>
+  <div id="cap"></div>
+  <button id="replay">↺ Replay</button>
+  <div id="play">
+    <h1>🛡️ Airgap</h1>
+    <div class="btn">▶ Play film (2:45)</div>
+    <div class="hint">Fullscreen this, then screen-record (Cmd+Shift+5) to make your video</div>
+  </div>
+</div></div>
+
+<script>
+const scenes = [
+  {id:'s1', dur:11000, cap:'Airgap — local-first PII governance for DataHub'},
+  {id:'s2', dur:15000, cap:'The problem: classification doesn’t travel with the data', reveal:'#s2 .pts li'},
+  {id:'s3', dur:16000, cap:'A real DataHub, running locally — no Docker', type:'#t3'},
+  {id:'s4', dur:24000, cap:'Airgap reads DataHub, finds 5 governance leaks, explains them locally', type:'#t4'},
+  {id:'s5', dur:16000, cap:'Every finding: lineage evidence, a local-LLM explanation, a fix'},
+  {id:'s6', dur:16000, cap:'The leak map — red is where PII escapes', draw:['e1','e3','e4','e5']},
+  {id:'s7', dur:13000, cap:'Ready-to-run DataHub SDK remediation, straight into a PR'},
+  {id:'s8', dur:15000, cap:'Wi-Fi off — still works. Nothing leaves the machine.'},
+  {id:'s9', dur:12000, cap:'github.com/zelihaguven/airgap'},
+];
+const total = scenes.reduce((a,s)=>a+s.dur,0);
+const starts = []; { let a=0; for(const s of scenes){ starts.push(a); a+=s.dur; } }
+const cap = document.getElementById('cap');
+const prog = document.getElementById('progress');
+
+let raf=null, t0=null, curIdx=-1, timers=[], playing=false;
+function clearTimers(){ timers.forEach(t=>clearTimeout(t)); timers=[]; }
+
+function revealLines(sel, step){
+  const els=document.querySelectorAll(sel);
+  els.forEach(el=>el.classList.remove('show'));
+  els.forEach((el,i)=> timers.push(setTimeout(()=>el.classList.add('show'), i*step)));
+}
+function enterScene(idx){
+  const s=scenes[idx];
+  // exactly one active — force every other off
+  document.querySelectorAll('.scene').forEach(sc=>sc.classList.toggle('active', sc.id===s.id));
+  cap.textContent=s.cap||''; cap.classList.add('show');
+  clearTimers();
+  if(s.type) revealLines(s.type+' .line', 700);
+  if(s.reveal) revealLines(s.reveal, 1500);
+  if(s.draw){ s.draw.forEach(id=>document.getElementById(id).classList.remove('on'));
+    s.draw.forEach((id,i)=> timers.push(setTimeout(()=>document.getElementById(id).classList.add('on'), 400+i*500))); }
+  timers.push(setTimeout(()=>cap.classList.remove('show'), s.dur-600));
+}
+function frame(ts){
+  if(t0===null) t0=ts;
+  const t=ts-t0;
+  if(t>=total){ prog.style.width='100%'; document.querySelectorAll('.scene').forEach(sc=>sc.classList.remove('active'));
+    document.getElementById(scenes[scenes.length-1].id).classList.add('active'); endFilm(); return; }
+  let idx=0; for(let i=scenes.length-1;i>=0;i--){ if(t>=starts[i]){ idx=i; break; } }
+  if(idx!==curIdx){ curIdx=idx; enterScene(idx); }
+  prog.style.width=(t/total*100)+'%';
+  raf=requestAnimationFrame(frame);
+}
+function endFilm(){ playing=false; document.getElementById('replay').style.display='block'; }
+function play(){
+  if(raf) cancelAnimationFrame(raf);
+  clearTimers();
+  playing=true; t0=null; curIdx=-1;
+  document.getElementById('play').style.display='none';
+  document.getElementById('replay').style.display='none';
+  prog.style.width='0';
+  raf=requestAnimationFrame(frame);
+}
+document.getElementById('play').addEventListener('click', play);
+document.getElementById('replay').addEventListener('click', play);
+document.addEventListener('keydown', e=>{ if(e.key==='f'){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }});
+</script>
+</body>
+</html>
