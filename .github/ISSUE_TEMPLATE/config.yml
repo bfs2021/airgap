@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/zelihaguven/airgap/blob/main/docs/DOCUMENTATION.md
+    about: How Airgap works, its sources, rules and configuration.
+  - name: Contributing guide
+    url: https://github.com/zelihaguven/airgap/blob/main/CONTRIBUTING.md
+    about: Dev setup, running tests and pull request conventions.

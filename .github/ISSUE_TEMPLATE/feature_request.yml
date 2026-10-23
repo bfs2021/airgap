@@ -1,0 +1,45 @@
+name: Feature request
+description: Suggest a new rule, source, output format or improvement.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What governance or usability problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How it could work. For new rules, describe what is flagged and what must not be.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Detection rules
+        - Metadata sources (fixture / DataHub Lite / GMS)
+        - Reports and outputs
+        - Local LLM layer
+        - CLI and configuration
+        - Docs
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: principles
+    attributes:
+      label: Project principles
+      options:
+        - label: Detection stays deterministic (the LLM only explains).
+          required: true
+        - label: No metadata is sent to a cloud service.
+          required: true

@@ -1,0 +1,60 @@
+name: Bug report
+description: Something in Airgap does not work as documented.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please redact real URNs, hostnames and tokens
+        before pasting anything. Never paste a DataHub access token.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: The exact command(s) you ran, and the relevant part of config.yaml.
+      placeholder: |
+        airgap audit --source datahub-lite --no-llm
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Metadata source
+      options:
+        - fixture
+        - datahub-lite
+        - datahub (GMS / GraphQL)
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error output
+      description: Full traceback or CLI output. This is rendered as code.
+      render: shell
+  - type: input
+    id: airgap-version
+    attributes:
+      label: Airgap version
+      placeholder: "0.1.0 (pip show airgap-datahub)"
+    validations:
+      required: true
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version and OS
+      placeholder: "Python 3.12, macOS 15"
+    validations:
+      required: true
+  - type: input
+    id: datahub-version
+    attributes:
+      label: DataHub version (if not using the fixture)
+      placeholder: "acryl-datahub 1.6.0 / GMS v1.x"
