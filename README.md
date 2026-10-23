@@ -38,7 +38,7 @@ audit runs offline.
 
 ## Demo & media
 
-![Airgap lineage leak map](docs/media/leak_map.png)
+![Airgap lineage leak map](https://raw.githubusercontent.com/zelihaguven/airgap/main/docs/media/leak_map.png)
 
 *Airgap's leak map — red paths are where PII escapes, ranked by blast radius. Generated from a **real, local DataHub Lite** run (no Docker, no cloud).*
 
@@ -50,19 +50,31 @@ audit runs offline.
 - 📚 [Technical documentation](docs/DOCUMENTATION.md) · 🧭 [Product requirements doc (PRD, in Turkish)](docs/PRD.md)
 
 <p align="center">
-  <img src="docs/media/hero.png" width="32%" alt="Airgap">
-  <img src="docs/media/findings.png" width="32%" alt="5 governance leaks found">
-  <img src="docs/media/architecture.png" width="32%" alt="How Airgap works">
+  <img src="https://raw.githubusercontent.com/zelihaguven/airgap/main/docs/media/hero.png" width="32%" alt="Airgap">
+  <img src="https://raw.githubusercontent.com/zelihaguven/airgap/main/docs/media/findings.png" width="32%" alt="5 governance leaks found">
+  <img src="https://raw.githubusercontent.com/zelihaguven/airgap/main/docs/media/architecture.png" width="32%" alt="How Airgap works">
 </p>
 
 All docs live in [`docs/`](docs) and media assets in [`docs/media/`](docs/media).
 
 ---
 
-## Quickstart
+## Install
 
 ```bash
-git clone <your-fork-url> airgap && cd airgap
+pip install airgap-datahub
+```
+
+The PyPI distribution is named `airgap-datahub`; the command and the import
+name are both `airgap`. The wheel does not bundle `config.yaml` or the demo
+fixture, so pass your own config when running from a PyPI install:
+`airgap audit --config path/to/config.yaml --out ./outputs`
+(copy [`config.yaml`](https://github.com/zelihaguven/airgap/blob/main/config.yaml) as a starting point).
+
+## Quickstart (from source, with the bundled demo catalog)
+
+```bash
+git clone https://github.com/zelihaguven/airgap.git && cd airgap
 python3 -m venv .venv && ./.venv/bin/pip install -e .
 
 # Audit the bundled synthetic catalog (zero setup, fully offline)
