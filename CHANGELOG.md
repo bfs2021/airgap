@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0] - Unreleased
+## [0.1.0] - 2026-10-23
 
 First public release, published on PyPI as `airgap-datahub`. The command and
 the import name are `airgap`.
@@ -17,6 +17,11 @@ the import name are `airgap`.
 - `airgap audit` CLI with `--config`, `--source`, `--url`, `--token`,
   `--model`, `--no-llm`, `--out` and `--fail-on-critical` (exit code 2 when
   any CRITICAL finding exists, for CI use).
+- Works out of the box after `pip install`: the default config and the demo
+  catalog ship as package data. Config lookup is `--config PATH`, then
+  `./config.yaml` in the current directory, then the bundled default.
+  Outputs go to `./outputs/` in the current directory by default (`--out`
+  to change it).
 - Three metadata sources that normalize into one `MetadataGraph` model:
   - `fixture`: the bundled synthetic Acme catalog
     (`airgap/data/acme_datalake.json`), fully offline.
@@ -43,7 +48,8 @@ the import name are `airgap`.
   script per finding in `patches/`. Airgap never writes to DataHub itself.
 - `scripts/setup_datahub_lite.sh` and `scripts/seed_datahub_lite.py` to stand
   up and seed a local DataHub Lite with the Acme catalog.
-- Detection regression tests against the Acme fixture (`tests/`).
+- Detection regression tests against the Acme fixture, and tests for the
+  CLI's config and output-directory defaults (`tests/`).
 - Sample outputs in `examples/`, plus documentation, PRD, demo film, slide
   deck and media in `docs/`.
 - GitHub Actions: tests on Python 3.10–3.12, and PyPI Trusted Publishing on
