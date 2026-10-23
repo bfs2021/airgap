@@ -47,6 +47,7 @@ audit runs offline.
 - 🖥️ **Slide deck** — [open live ↗](https://htmlpreview.github.io/?https://github.com/zelihaguven/airgap/blob/main/docs/presentation.html)
 - ▶️ **Video walkthrough** — _add your YouTube link here_
 - 📝 [Project writeup](docs/DEVPOST.md) · 🎥 [video script](docs/VIDEO_SCRIPT.md)
+- 📚 [Technical documentation](docs/DOCUMENTATION.md) · 🧭 [Product requirements doc (PRD, in Turkish)](docs/PRD.md)
 
 <p align="center">
   <img src="docs/media/hero.png" width="32%" alt="Airgap">
@@ -54,7 +55,7 @@ audit runs offline.
   <img src="docs/media/architecture.png" width="32%" alt="How Airgap works">
 </p>
 
-All media assets live in [`docs/media/`](docs/media).
+All docs live in [`docs/`](docs) and media assets in [`docs/media/`](docs/media).
 
 ---
 

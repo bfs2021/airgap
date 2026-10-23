@@ -246,6 +246,7 @@ airgap/
 ├── sources/
 │   ├── base.py         MetadataSource interface
 │   ├── datahub.py      live DataHub GraphQL source
+│   ├── datahub_lite.py local DataHub Lite source (via `datahub lite` CLI)
 │   └── fixture.py      synthetic-fixture source
 ├── detect/
 │   ├── findings.py     Finding model, marker matching, severity scoring
@@ -260,6 +261,8 @@ fixtures/acme_datalake.json   synthetic DataHub-shape catalog with planted leaks
 examples/                     sample outputs (findings, report, graph, patches)
 tests/test_detection.py       detection regression tests
 config.yaml                   markers, thresholds, source & Ollama config
+scripts/                      DataHub Lite setup + seeding scripts
+docs/                         this document, PRD, writeup, demo film, deck, media
 ```
 
 ---
