@@ -1,5 +1,7 @@
 # 🛡️ Airgap
 
+[![Tests](https://github.com/zelihaguven/airgap/actions/workflows/test.yml/badge.svg)](https://github.com/zelihaguven/airgap/actions/workflows/test.yml)
+
 **Local-first data governance & PII lineage auditor for [DataHub](https://datahubproject.io).**
 Finds where sensitive data leaks downstream — without a single byte of your metadata ever leaving your machine.
 
