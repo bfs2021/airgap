@@ -3,24 +3,34 @@
 The fixture uses the exact same field names and lineage model as real DataHub
 metadata, so the detection engine cannot tell the difference between this and a
 live instance.
+
+With no path, the synthetic Acme catalog bundled in `airgap/data/` is used.
 """
 from __future__ import annotations
 
 import json
+from importlib import resources
 
 from airgap.model import Asset, Field, FieldLineage, LineageEdge, MetadataGraph
 from airgap.sources.base import MetadataSource
 
 
+BUNDLED_FIXTURE = "acme_datalake.json"
+
+
 class FixtureSource(MetadataSource):
     name = "fixture"
 
-    def __init__(self, path: str) -> None:
-        self.path = path
+    def __init__(self, path: str | None = None) -> None:
+        self.path = path or None
 
     def fetch(self) -> MetadataGraph:
-        with open(self.path, "r", encoding="utf-8") as fh:
-            raw = json.load(fh)
+        if self.path is None:
+            bundled = resources.files("airgap.data").joinpath(BUNDLED_FIXTURE)
+            raw = json.loads(bundled.read_text(encoding="utf-8"))
+        else:
+            with open(self.path, "r", encoding="utf-8") as fh:
+                raw = json.load(fh)
 
         graph = MetadataGraph()
         for a in raw.get("assets", []):

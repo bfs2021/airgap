@@ -49,3 +49,8 @@ airgap = "airgap.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["airgap*"]
+
+[tool.setuptools.package-data]
+# Default config and the synthetic demo catalog, so a pip-installed
+# `airgap audit` works out of the box.
+"airgap.data" = ["config.yaml", "acme_datalake.json"]

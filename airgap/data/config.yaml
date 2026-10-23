@@ -1,0 +1,51 @@
+# Airgap configuration. Everything runs locally by default.
+
+# --- Metadata source ---
+# Default source is the bundled synthetic fixture (zero setup, fully offline).
+# To audit a live DataHub instance, set source: datahub and provide url/token
+# (or pass --url / --token on the CLI). No metadata ever leaves your machine
+# except the read-only calls to the DataHub instance you point at.
+source: fixture
+# Leave fixture_path empty to use the bundled synthetic Acme catalog. A
+# relative path is resolved against the directory of this config file.
+fixture_path: ""
+
+datahub:
+  url: ""        # e.g. https://your-company.acryl.io  (or http://localhost:9002)
+  token: ""      # DataHub personal access token
+  # Max downstream hops to walk when building lineage from a live instance.
+  lineage_depth: 4
+
+# --- Local LLM (Ollama) ---
+# Used ONLY to turn deterministic findings into human-readable prose and
+# remediation guidance. All calls go to localhost; nothing is sent to a cloud.
+ollama:
+  url: http://localhost:11434
+  model: qwen2.5:7b        # good at structured/JSON output
+  prose_model: llama3.1:latest
+  timeout_seconds: 120
+  enabled: true            # set false to skip LLM and emit deterministic-only report
+
+# --- Governance detection ---
+detection:
+  # A field or dataset carrying any of these markers (tag or glossary term,
+  # matched case-insensitively) is treated as sensitive / PII.
+  pii_markers:
+    - PII
+    - Sensitive
+    - Confidential
+    - PersonalData
+    - Email
+    - PhoneNumber
+    - SSN
+    - NationalID
+    - Classification.Sensitive
+    - Classification.HighlyConfidential
+  # Consumer entity types that are human-facing; they amplify blast radius.
+  human_facing_types:
+    - dashboard
+    - chart
+  # Severity thresholds by blast radius (number of downstream consumers).
+  severity:
+    critical_blast_radius: 3
+    high_blast_radius: 1

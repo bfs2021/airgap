@@ -1,6 +1,7 @@
 """Airgap CLI.
 
     airgap audit                     # audit the bundled fixture (default)
+    airgap audit --config my.yaml    # explicit config (else ./config.yaml, else bundled)
     airgap audit --source datahub --url https://... --token ...
     airgap audit --no-llm            # deterministic only, skip Ollama
 """
@@ -10,6 +11,7 @@ import argparse
 import json
 import os
 import sys
+from importlib import resources
 
 import yaml
 
@@ -19,8 +21,10 @@ from airgap.remediate import generate_patches
 from airgap.report import write_graph_html, write_markdown
 from airgap.sources import build_source
 
-_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_DEFAULT_CONFIG = os.path.join(_REPO_ROOT, "config.yaml")
+#: File name looked up in the current working directory.
+CONFIG_FILENAME = "config.yaml"
+#: Default output directory, relative to the current working directory.
+DEFAULT_OUT = "outputs"
 
 _COLOR = {
     Severity.CRITICAL: "\033[91m",
@@ -31,7 +35,26 @@ _COLOR = {
 _RESET = "\033[0m"
 
 
-def _load_config(path: str) -> dict:
+def resolve_config(explicit: str | None) -> str | None:
+    """Pick the config file to load.
+
+    Precedence: an explicit ``--config`` path, then ``./config.yaml`` in the
+    current working directory, then the default config bundled with the
+    package (returned as ``None``).
+    """
+    if explicit:
+        return explicit
+    if os.path.isfile(CONFIG_FILENAME):
+        return os.path.abspath(CONFIG_FILENAME)
+    return None
+
+
+def _load_config(path: str | None) -> dict:
+    if path is None:
+        text = resources.files("airgap.data").joinpath(CONFIG_FILENAME).read_text(
+            encoding="utf-8"
+        )
+        return yaml.safe_load(text) or {}
     with open(path, "r", encoding="utf-8") as fh:
         cfg = yaml.safe_load(fh) or {}
     # Resolve fixture path relative to the config file's directory.
@@ -94,7 +117,10 @@ def _print_summary(findings) -> None:
 
 
 def cmd_audit(args: argparse.Namespace) -> int:
-    cfg = _apply_overrides(_load_config(args.config), args)
+    args.out = os.path.abspath(args.out)
+    config_path = resolve_config(args.config)
+    cfg = _apply_overrides(_load_config(config_path), args)
+    print(f"  · Config: {config_path or 'bundled default (airgap/data/config.yaml)'}")
 
     source = build_source(cfg)
     print(f"  · Fetching metadata from source: {source.name}")
@@ -143,7 +169,11 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
 
     a = sub.add_parser("audit", help="Run a governance audit.")
-    a.add_argument("--config", default=_DEFAULT_CONFIG, help="Path to config.yaml")
+    a.add_argument(
+        "--config",
+        help="Path to a config file (default: ./config.yaml if present, "
+        "otherwise the bundled default config)",
+    )
     a.add_argument(
         "--source",
         choices=["fixture", "datahub-lite", "datahub"],
@@ -153,7 +183,11 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--token", help="DataHub access token")
     a.add_argument("--model", help="Override Ollama model")
     a.add_argument("--no-llm", action="store_true", help="Skip the local LLM layer")
-    a.add_argument("--out", default=os.path.join(_REPO_ROOT, "outputs"), help="Output dir")
+    a.add_argument(
+        "--out",
+        default=DEFAULT_OUT,
+        help="Output directory, relative to the current directory (default: ./outputs)",
+    )
     a.add_argument(
         "--fail-on-critical",
         action="store_true",

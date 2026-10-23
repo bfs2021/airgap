@@ -16,7 +16,7 @@ def build_source(cfg: dict) -> MetadataSource:
     """Construct the metadata source selected in config."""
     kind = cfg.get("source", "fixture")
     if kind == "fixture":
-        return FixtureSource(cfg["fixture_path"])
+        return FixtureSource(cfg.get("fixture_path") or None)
     if kind == "datahub-lite":
         return DataHubLiteSource(datahub_bin=cfg.get("datahub_lite", {}).get("bin"))
     if kind == "datahub":

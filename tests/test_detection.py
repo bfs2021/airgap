@@ -16,7 +16,7 @@ def _cfg() -> dict:
 
 
 def _graph():
-    return FixtureSource(os.path.join(_ROOT, "fixtures", "acme_datalake.json")).fetch()
+    return FixtureSource(os.path.join(_ROOT, "airgap", "data", "acme_datalake.json")).fetch()
 
 
 def _by_asset(findings):

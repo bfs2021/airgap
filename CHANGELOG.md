@@ -19,7 +19,7 @@ the import name are `airgap`.
   any CRITICAL finding exists, for CI use).
 - Three metadata sources that normalize into one `MetadataGraph` model:
   - `fixture`: the bundled synthetic Acme catalog
-    (`fixtures/acme_datalake.json`), fully offline.
+    (`airgap/data/acme_datalake.json`), fully offline.
   - `datahub-lite`: a local, Docker-free DataHub Lite instance, read through
     the `datahub lite` CLI (`schemaMetadata`, `ownership`, `upstreamLineage`
     with `fineGrainedLineages`, `dashboardInfo`/`chartInfo`).

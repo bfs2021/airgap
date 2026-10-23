@@ -6,7 +6,9 @@
 # (or pass --url / --token on the CLI). No metadata ever leaves your machine
 # except the read-only calls to the DataHub instance you point at.
 source: fixture
-fixture_path: fixtures/acme_datalake.json
+# Leave fixture_path empty to use the bundled synthetic Acme catalog. A
+# relative path is resolved against the directory of this config file.
+fixture_path: ""
 
 datahub:
   url: ""        # e.g. https://your-company.acryl.io  (or http://localhost:9002)

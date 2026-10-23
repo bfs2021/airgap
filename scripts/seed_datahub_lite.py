@@ -176,7 +176,7 @@ def _consumer_mcp(asset: dict, edges: list):
 
 
 def main() -> int:
-    fixture = json.loads((_ROOT / "fixtures" / "acme_datalake.json").read_text())
+    fixture = json.loads((_ROOT / "airgap" / "data" / "acme_datalake.json").read_text())
     edges = fixture["edges"]
     field_edges = fixture["field_edges"]
 

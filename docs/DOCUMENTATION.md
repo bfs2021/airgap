@@ -255,11 +255,13 @@ airgap/
 ├── report/
 │   ├── markdown.py     report.md
 │   └── graph_html.py   offline lineage leak map
-└── remediate/patches.py  DataHub SDK remediation code generator
+├── remediate/patches.py  DataHub SDK remediation code generator
+└── data/
+    ├── config.yaml     bundled default config (copy of the root config.yaml)
+    └── acme_datalake.json  synthetic DataHub-shape catalog with planted leaks
 
-fixtures/acme_datalake.json   synthetic DataHub-shape catalog with planted leaks
 examples/                     sample outputs (findings, report, graph, patches)
-tests/test_detection.py       detection regression tests
+tests/                        detection and CLI-defaults tests
 config.yaml                   markers, thresholds, source & Ollama config
 scripts/                      DataHub Lite setup + seeding scripts
 docs/                         this document, PRD, writeup, demo film, deck, media
@@ -282,6 +284,10 @@ airgap audit --source datahub --url https://your.acryl.io --token $TOKEN
 # CI gate
 airgap audit --fail-on-critical
 ```
+
+Config lookup: `--config PATH` if given, else `./config.yaml` in the current
+directory, else the default config bundled in `airgap/data/`. Outputs are
+written to `./outputs/` in the current directory unless `--out DIR` is given.
 
 ---
 

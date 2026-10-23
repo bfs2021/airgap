@@ -66,10 +66,26 @@ pip install airgap-datahub
 ```
 
 The PyPI distribution is named `airgap-datahub`; the command and the import
-name are both `airgap`. The wheel does not bundle `config.yaml` or the demo
-fixture, so pass your own config when running from a PyPI install:
-`airgap audit --config path/to/config.yaml --out ./outputs`
-(copy [`config.yaml`](https://github.com/zelihaguven/airgap/blob/main/config.yaml) as a starting point).
+name are both `airgap`. The default config and the synthetic demo catalog ship
+inside the package, so this works from any directory, with no setup:
+
+```bash
+airgap audit --no-llm      # writes ./outputs/ in the current directory
+```
+
+### Configuration lookup
+
+`airgap audit` picks its config in this order:
+
+1. `--config path/to/config.yaml`, if given;
+2. `config.yaml` in the current directory, if present;
+3. the default config bundled with the package (same content as
+   [`config.yaml`](config.yaml) in this repo), which audits the bundled demo
+   catalog.
+
+A relative `fixture_path` is resolved against the directory of the config file
+that sets it; an empty `fixture_path` means the bundled demo catalog. Outputs go
+to `./outputs/` in the current directory; change that with `--out DIR`.
 
 ## Quickstart (from source, with the bundled demo catalog)
 
@@ -81,7 +97,7 @@ python3 -m venv .venv && ./.venv/bin/pip install -e .
 ./.venv/bin/airgap audit
 ```
 
-Outputs land in `outputs/`:
+Outputs land in `./outputs/` (relative to the current directory):
 - `findings.json` — machine-readable findings
 - `report.md` — human-readable governance report
 
