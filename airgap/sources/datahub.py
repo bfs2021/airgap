@@ -14,6 +14,7 @@ from typing import Any
 
 import requests
 
+from airgap.errors import AirgapError
 from airgap.model import Asset, Field, FieldLineage, LineageEdge, MetadataGraph
 from airgap.sources.base import MetadataSource
 
@@ -166,10 +167,24 @@ class DataHubSource(MetadataSource):
         self._session.headers["Content-Type"] = "application/json"
 
     def _gql(self, query: str, variables: dict[str, Any]) -> dict:
-        resp = self._session.post(
-            self.endpoint, json={"query": query, "variables": variables}, timeout=60
-        )
-        resp.raise_for_status()
+        try:
+            resp = self._session.post(
+                self.endpoint, json={"query": query, "variables": variables}, timeout=60
+            )
+        except requests.exceptions.RequestException as exc:
+            raise AirgapError(
+                f"cannot reach DataHub at {self.endpoint}: {type(exc).__name__}"
+            ) from None
+        try:
+            resp.raise_for_status()
+        except requests.exceptions.HTTPError as exc:
+            code = exc.response.status_code if exc.response is not None else "error"
+            hint = (
+                ": check the token (--token, AIRGAP_DATAHUB_TOKEN or datahub.token)"
+                if code in (401, 403)
+                else ""
+            )
+            raise AirgapError(f"DataHub at {self.endpoint} returned HTTP {code}{hint}") from None
         payload = resp.json()
         if payload.get("errors"):
             raise RuntimeError(f"DataHub GraphQL error: {payload['errors']}")

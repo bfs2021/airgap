@@ -15,8 +15,10 @@ from importlib import resources
 
 import yaml
 
+from airgap import __version__
 from airgap.detect import run_rules
 from airgap.detect.findings import Severity
+from airgap.errors import AirgapError
 from airgap.remediate import generate_patches
 from airgap.report import write_graph_html, write_markdown
 from airgap.sources import build_source
@@ -25,6 +27,8 @@ from airgap.sources import build_source
 CONFIG_FILENAME = "config.yaml"
 #: Default output directory, relative to the current working directory.
 DEFAULT_OUT = "outputs"
+#: Environment variable read for the DataHub token when --token is not given.
+TOKEN_ENV = "AIRGAP_DATAHUB_TOKEN"
 
 _COLOR = {
     Severity.CRITICAL: "\033[91m",
@@ -49,14 +53,24 @@ def resolve_config(explicit: str | None) -> str | None:
     return None
 
 
+def _first_line(exc: Exception) -> str:
+    lines = [ln.strip() for ln in str(exc).splitlines() if ln.strip()]
+    return lines[0] if lines else type(exc).__name__
+
+
 def _load_config(path: str | None) -> dict:
     if path is None:
         text = resources.files("airgap.data").joinpath(CONFIG_FILENAME).read_text(
             encoding="utf-8"
         )
         return yaml.safe_load(text) or {}
+    if not os.path.isfile(path):
+        raise AirgapError(f"config file not found: {path}")
     with open(path, "r", encoding="utf-8") as fh:
-        cfg = yaml.safe_load(fh) or {}
+        try:
+            cfg = yaml.safe_load(fh) or {}
+        except yaml.YAMLError as exc:
+            raise AirgapError(f"config file {path} is not valid YAML: {_first_line(exc)}") from None
     # Resolve fixture path relative to the config file's directory.
     base = os.path.dirname(os.path.abspath(path))
     fp = cfg.get("fixture_path", "")
@@ -70,8 +84,10 @@ def _apply_overrides(cfg: dict, args: argparse.Namespace) -> dict:
         cfg["source"] = args.source
     if args.url:
         cfg.setdefault("datahub", {})["url"] = args.url
-    if args.token:
-        cfg.setdefault("datahub", {})["token"] = args.token
+    # Token precedence: --token, then $AIRGAP_DATAHUB_TOKEN, then datahub.token.
+    token = args.token or os.environ.get(TOKEN_ENV)
+    if token:
+        cfg.setdefault("datahub", {})["token"] = token
     if args.no_llm:
         cfg.setdefault("ollama", {})["enabled"] = False
     if args.model:
@@ -121,8 +137,16 @@ def cmd_audit(args: argparse.Namespace) -> int:
     config_path = resolve_config(args.config)
     cfg = _apply_overrides(_load_config(config_path), args)
     print(f"  · Config: {config_path or 'bundled default (airgap/data/config.yaml)'}")
+    if cfg.get("source") == "datahub" and not (cfg.get("datahub") or {}).get("url"):
+        raise AirgapError(
+            "source 'datahub' needs a DataHub URL: pass --url or set datahub.url "
+            "in the config file"
+        )
 
-    source = build_source(cfg)
+    try:
+        source = build_source(cfg)
+    except ValueError as exc:  # unknown source name in the config file
+        raise AirgapError(str(exc)) from None
     print(f"  · Fetching metadata from source: {source.name}")
     from airgap.detect.settings import DetectionConfigError, detection_settings
 
@@ -145,7 +169,12 @@ def cmd_audit(args: argparse.Namespace) -> int:
     if cfg.get("ollama", {}).get("enabled", True):
         _enrich_with_llm(findings, cfg)
 
-    os.makedirs(args.out, exist_ok=True)
+    try:
+        os.makedirs(args.out, exist_ok=True)
+    except OSError as exc:  # for example --out names an existing file
+        raise AirgapError(
+            f"cannot use --out {args.out} as the output directory: {exc.strerror}"
+        ) from None
     json_path = os.path.join(args.out, "findings.json")
     md_path = os.path.join(args.out, "report.md")
     html_path = os.path.join(args.out, "lineage_graph.html")
@@ -175,6 +204,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="airgap",
         description="Local-first data governance & PII lineage auditor for DataHub.",
     )
+    p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = p.add_subparsers(dest="command", required=True)
 
     a = sub.add_parser("audit", help="Run a governance audit.")
@@ -189,7 +219,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Override source",
     )
     a.add_argument("--url", help="DataHub URL (for --source datahub)")
-    a.add_argument("--token", help="DataHub access token")
+    a.add_argument(
+        "--token",
+        help=f"DataHub access token (default: ${TOKEN_ENV}, then datahub.token "
+        "in the config file)",
+    )
     a.add_argument("--model", help="Override Ollama model")
     a.add_argument("--no-llm", action="store_true", help="Skip the local LLM layer")
     a.add_argument(
@@ -209,7 +243,11 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    return args.func(args)
+    try:
+        return args.func(args)
+    except AirgapError as exc:
+        print(f"{parser.prog}: error: {exc}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

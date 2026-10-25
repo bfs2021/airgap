@@ -9,8 +9,6 @@ import os
 import shutil
 from importlib import resources
 
-import pytest
-
 from airgap import cli
 from airgap.sources import FixtureSource
 
@@ -74,14 +72,15 @@ def test_cwd_config_beats_bundled_default(tmp_path, monkeypatch, capsys):
     assert _findings(tmp_path / "outputs")["findings"] == []
 
 
-def test_explicit_config_beats_cwd_config(tmp_path, monkeypatch):
+def test_explicit_config_beats_cwd_config(tmp_path, monkeypatch, capsys):
     (tmp_path / "config.yaml").write_text("source: nonsense\n", encoding="utf-8")
     monkeypatch.chdir(tmp_path)
     assert cli.resolve_config(_REPO_CONFIG) == _REPO_CONFIG
     assert _audit("--config", _REPO_CONFIG) == 0
+    capsys.readouterr()
     # Without the flag, the broken ./config.yaml is picked up.
-    with pytest.raises(ValueError, match="Unknown source"):
-        _audit()
+    assert _audit() == 1
+    assert "airgap: error: Unknown source: 'nonsense'" in capsys.readouterr().err
 
 
 def test_relative_out_is_resolved_against_cwd(tmp_path, monkeypatch):

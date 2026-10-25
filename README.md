@@ -106,7 +106,7 @@ and can differ between sources).
 
 ```text
 $ airgap --help
-usage: airgap [-h] {audit} ...
+usage: airgap [-h] [--version] {audit} ...
 
 Local-first data governance & PII lineage auditor for DataHub.
 
@@ -116,6 +116,7 @@ positional arguments:
 
 options:
   -h, --help  show this help message and exit
+  --version   show program's version number and exit
 ```
 
 ```text
@@ -132,7 +133,8 @@ options:
   --source {fixture,datahub-lite,datahub}
                         Override source
   --url URL             DataHub URL (for --source datahub)
-  --token TOKEN         DataHub access token
+  --token TOKEN         DataHub access token (default: $AIRGAP_DATAHUB_TOKEN,
+                        then datahub.token in the config file)
   --model MODEL         Override Ollama model
   --no-llm              Skip the local LLM layer
   --out OUT             Output directory, relative to the current directory
@@ -141,14 +143,18 @@ options:
 ```
 
 Command-line flags override the matching config values (`--source`, `--url`,
-`--token`, `--model`, and `--no-llm` for `ollama.enabled`).
+`--token`, `--model`, and `--no-llm` for `ollama.enabled`). The
+`AIRGAP_DATAHUB_TOKEN` environment variable sits between them for the token:
+it overrides `datahub.token` in the config file, and `--token` overrides it.
+`airgap --version` prints the installed version.
 
 ### Exit codes
 
 | Code | Meaning |
 |---|---|
 | `0` | Audit completed. Findings do not change the exit code unless `--fail-on-critical` is set. |
-| `2` | `--fail-on-critical` was set and at least one CRITICAL finding exists. |
+| `1` | Airgap stopped with a one-line `airgap: error: ...` message on stderr and no traceback. Examples: the `--config` file does not exist or is not valid YAML, the config names an unknown `source`, the fixture file is missing, is not valid JSON or lacks a required key, `--out` names an existing file, `source: datahub` has no URL, DataHub answers with an HTTP error (401 and 403 add a token hint) or cannot be reached, the `datahub` executable for `source: datahub-lite` was not found, or a `datahub lite` command failed (its last stderr line is shown). |
+| `2` | `--fail-on-critical` was set and at least one CRITICAL finding exists. Invalid command-line arguments also exit with `2`. |
 
 On the bundled demo, `airgap audit --no-llm --fail-on-critical` exits with `2`,
 which is how you would gate a CI job on new CRITICAL leaks.
@@ -170,7 +176,7 @@ The line `· Config: ...` in the output tells you which one was used. Copy
 |---|---|---|
 | `source` | `fixture` | `fixture`, `datahub-lite` or `datahub`. |
 | `fixture_path` | `""` | JSON catalog for `source: fixture`. Empty means the bundled Acme catalog. A relative path is resolved against the config file's directory. |
-| `datahub.url`, `datahub.token` | `""` | GMS endpoint and personal access token for `source: datahub`. |
+| `datahub.url`, `datahub.token` | `""` | GMS endpoint and personal access token for `source: datahub`. The `AIRGAP_DATAHUB_TOKEN` environment variable overrides `datahub.token`, and `--token` overrides both. |
 | `datahub.lineage_depth` | `4` | For `source: datahub`, how many downstream hops to follow from each dataset. Dashboards, charts, data jobs and ML models reached within that many hops are loaded as assets. Values below 1 count as 1. |
 | `datahub_lite.bin` | (not set) | Path to the `datahub` executable for `source: datahub-lite`. Defaults to the one next to the running Python, else `datahub` on `PATH`. |
 | `ollama.url`, `ollama.model`, `ollama.timeout_seconds` | `http://localhost:11434`, `qwen2.5:7b`, `120` | Local explanation model. |
@@ -179,8 +185,6 @@ The line `· Config: ...` in the output tells you which one was used. Copy
 | `detection.human_facing_types` | `dashboard`, `chart` | Downstream entity types that make a finding CRITICAL. |
 | `detection.severity.critical_blast_radius` | `3` | Blast radius at or above which a finding is CRITICAL. |
 | `detection.severity.high_blast_radius` | `1` | Blast radius at or above which a finding is HIGH. |
-
-`ollama.prose_model` appears in the sample config but is not used by v0.1.0.
 
 Outputs go to `./outputs/` in the current directory. Change that with
 `--out DIR`.
@@ -218,7 +222,8 @@ and `dashboardInfo` / `chartInfo`.
 ### `datahub`: a running DataHub GMS
 
 ```bash
-airgap audit --source datahub --url https://your-datahub.example.com --token "$DATAHUB_TOKEN"
+export AIRGAP_DATAHUB_TOKEN="<your personal access token>"
+airgap audit --source datahub --url https://your-datahub.example.com
 ```
 
 Airgap sends read-only GraphQL queries to `<url>/api/graphql`: a dataset

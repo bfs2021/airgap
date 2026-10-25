@@ -16,6 +16,7 @@ import os
 import subprocess
 import sys
 
+from airgap.errors import AirgapError
 from airgap.model import Asset, Field, FieldLineage, LineageEdge, MetadataGraph
 from airgap.sources.base import MetadataSource
 from airgap.sources.datahub import _split_schema_field
@@ -82,15 +83,24 @@ class DataHubLiteSource(MetadataSource):
 
     def _run(self, *args: str) -> str:
         env = dict(os.environ, PYTHONWARNINGS="ignore")
-        proc = subprocess.run(
-            [self.datahub_bin, "lite", *args],
-            capture_output=True,
-            text=True,
-            env=env,
-        )
+        try:
+            proc = subprocess.run(
+                [self.datahub_bin, "lite", *args],
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+        except FileNotFoundError:
+            raise AirgapError(
+                f"DataHub CLI not found: {self.datahub_bin!r}. Install it with "
+                'pip install "airgap-datahub[datahub-lite]", or set datahub_lite.bin '
+                "in the config file to the path of the datahub executable."
+            ) from None
         if proc.returncode != 0:
-            raise RuntimeError(
-                f"`datahub lite {' '.join(args)}` failed:\n{proc.stderr[-800:]}"
+            lines = [ln.strip() for ln in proc.stderr.splitlines() if ln.strip()]
+            raise AirgapError(
+                f"`datahub lite {' '.join(args)}` failed (exit {proc.returncode}): "
+                f"{lines[-1] if lines else 'no error output'}"
             )
         return proc.stdout
 
