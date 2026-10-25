@@ -127,6 +127,7 @@ class MetadataGraph:
                 continue
             seen.add(cur)
             stack.extend(down.get(cur, ()))
+        seen.discard(urn)  # a lineage cycle leads back to the asset itself
         return seen
 
     def field_downstream(self, urn: str, field_path: str) -> list[FieldLineage]:
