@@ -207,10 +207,12 @@ def rule_r2(graph: MetadataGraph, cfg: dict, pii_set: set[str]) -> list[Finding]
 
 
 def run_rules(graph: MetadataGraph, cfg: dict) -> list[Finding]:
-    det = cfg.get("detection", {})
     from airgap.detect.findings import normalize_markers
+    from airgap.detect.settings import detection_settings
 
-    pii_set = normalize_markers(det.get("pii_markers", []))
+    det, _notes = detection_settings(cfg)  # missing keys fall back to the defaults
+    cfg = {**cfg, "detection": det}
+    pii_set = normalize_markers(det["pii_markers"])
     findings = rule_r1(graph, cfg, pii_set) + rule_r2(graph, cfg, pii_set)
     findings.sort(key=sort_key)
     return findings
