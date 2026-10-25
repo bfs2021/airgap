@@ -89,3 +89,13 @@ def test_null_properties_tag_and_term_recognized_as_pii():
     terms = _tag_names(term_container, "terms")
     assert terms == ("Email",)
     assert is_sensitive(terms, pii_set) is True
+
+
+def test_marker_matching_folds_case_including_turkish_i():
+    from airgap.detect.findings import is_sensitive, normalize_markers
+
+    pii_set = normalize_markers(["Kişisel", "Kısıtlı", "Classification.Sensitive", "PII"])
+    for tag in ("KİŞİSEL", "kişisel", "KISITLI", "kısıtlı", "SENSITIVE", "pii",
+                "Ki\u0307şi\u0307sel", "Kis\u0327isel"):
+        assert is_sensitive([tag], pii_set), tag
+    assert not is_sensitive(["Kamu", "Public"], pii_set)

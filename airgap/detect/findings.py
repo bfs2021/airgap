@@ -1,6 +1,7 @@
 """Finding model, marker matching, and severity scoring."""
 from __future__ import annotations
 
+import unicodedata
 from dataclasses import dataclass, field
 from typing import Iterable
 
@@ -46,14 +47,28 @@ class Finding:
         }
 
 
+def _fold(marker: str) -> str:
+    """Caseless form of a marker, used on both sides of every comparison.
+
+    str.casefold() alone is not enough for Turkish: 'İ' (U+0130) folds to 'i'
+    plus a combining dot above (U+0307), so 'KİŞİSEL' would not equal
+    'kişisel'. The dot is dropped after an 'i', and the dotless 'ı' is folded
+    to 'i' as well, so 'KISITLI' typed on a non-Turkish keyboard still matches
+    'Kısıtlı'. NFC keeps precomposed and decomposed input equal.
+    """
+    folded = unicodedata.normalize("NFC", marker.strip().casefold())
+    return folded.replace("i\u0307", "i").replace("\u0131", "i")
+
+
 def normalize_markers(markers: Iterable[str]) -> set[str]:
-    """Lowercase markers and also expose the last dotted segment.
+    """Case-fold markers and also expose the last dotted segment.
 
     'Classification.Sensitive' -> {'classification.sensitive', 'sensitive'}
+    'KİŞİSEL' and 'Kişisel' -> {'kisisel'}
     """
     out: set[str] = set()
     for m in markers:
-        low = m.strip().lower()
+        low = _fold(m)
         if not low:
             continue
         out.add(low)
