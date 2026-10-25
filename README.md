@@ -124,7 +124,8 @@ $ airgap audit --help
 usage: airgap audit [-h] [--config CONFIG]
                     [--source {fixture,datahub-lite,datahub}] [--url URL]
                     [--token TOKEN] [--model MODEL] [--no-llm] [--out OUT]
-                    [--fail-on-critical]
+                    [--format {json,md,html,sarif}]
+                    [--fail-on {critical,high,medium}] [--fail-on-critical]
 
 options:
   -h, --help            show this help message and exit
@@ -139,7 +140,13 @@ options:
   --no-llm              Skip the local LLM layer
   --out OUT             Output directory, relative to the current directory
                         (default: ./outputs)
-  --fail-on-critical    Exit non-zero if any CRITICAL finding (CI mode)
+  --format {json,md,html,sarif}
+                        Report format to write; repeat for several (default:
+                        json, md and html)
+  --fail-on {critical,high,medium}
+                        Exit with 2 if any finding is at or above this
+                        severity (CI mode)
+  --fail-on-critical    Same as --fail-on critical
 ```
 
 Command-line flags override the matching config values (`--source`, `--url`,
@@ -152,12 +159,22 @@ it overrides `datahub.token` in the config file, and `--token` overrides it.
 
 | Code | Meaning |
 |---|---|
-| `0` | Audit completed. Findings do not change the exit code unless `--fail-on-critical` is set. |
+| `0` | Audit completed. Findings do not change the exit code unless `--fail-on` is set. |
 | `1` | Airgap stopped with a one-line `airgap: error: ...` message on stderr and no traceback. Examples: the `--config` file does not exist or is not valid YAML, the config names an unknown `source`, the fixture file is missing, is not valid JSON or lacks a required key, `--out` names an existing file, `source: datahub` has no URL, DataHub answers with an HTTP error (401 and 403 add a token hint) or cannot be reached, the `datahub` executable for `source: datahub-lite` was not found, or a `datahub lite` command failed (its last stderr line is shown). |
-| `2` | `--fail-on-critical` was set and at least one CRITICAL finding exists. Invalid command-line arguments also exit with `2`. |
+| `2` | `--fail-on LEVEL` was set and at least one finding is at or above `LEVEL`. Invalid command-line arguments also exit with `2`. |
 
-On the bundled demo, `airgap audit --no-llm --fail-on-critical` exits with `2`,
-which is how you would gate a CI job on new CRITICAL leaks.
+`--fail-on critical` fails only on CRITICAL findings, `--fail-on high` on HIGH
+or CRITICAL, and `--fail-on medium` on any of the three. `--fail-on-critical`
+is kept as another name for `--fail-on critical`; if both flags are given, the
+last one wins. On the bundled demo, `airgap audit --no-llm --fail-on high`
+exits with `2`, which is how you would gate a CI job on new leaks.
+
+`--format` picks the report files: `json` (`findings.json`), `md`
+(`report.md`), `html` (`lineage_graph.html`) and `sarif` (`findings.sarif`).
+Repeat it to write several, for example
+`airgap audit --no-llm --format json --format sarif`. Without `--format`,
+Airgap writes `json`, `md` and `html`, as before. Remediation patches are
+always written.
 
 ## Configuration
 
@@ -262,7 +279,8 @@ downstream of the flagged dataset through dataset-level lineage:
 
 | File | Contents |
 |---|---|
-| `findings.json` | `{"source": ..., "findings": [...]}` with the fields shown in the Quickstart. |
+| `findings.json` | `{"schema_version": 1, "airgap_version": ..., "generated_at": ..., "source": ..., "findings": [...]}` with the fields shown in the Quickstart. The layout is described in [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md#91-findingsjson-schema). |
+| `findings.sarif` | Only with `--format sarif`. The same findings as a [SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html) log for code-scanning tools. See [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md#92-sarif-output). |
 | `report.md` | Markdown report: severity summary, then each finding with evidence, blast radius, remediation and explanation. |
 | `lineage_graph.html` | Self-contained lineage map with leak paths drawn in red. No CDN or external assets, so it opens offline. |
 | `patches/<finding-id>.py` | One remediation script per finding using the DataHub Python SDK (`acryl-datahub`): R1 adds the PII tag and `Classification.Sensitive` term to the leaked fields, R2 assigns an owner (a placeholder group you replace). Review and edit before running. Airgap never runs them and never writes to DataHub. |

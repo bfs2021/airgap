@@ -60,15 +60,19 @@ that runs entirely locally.
   (dashboards, charts).
 - **Explains findings locally** via Ollama, in GDPR-framed, plain-language prose,
   never deciding the finding, only describing it.
-- **Produces four artifacts** per run:
-  - `findings.json`: machine-readable findings
+- **Produces four artifacts** per run by default:
+  - `findings.json`: machine-readable findings, versioned (see §9.1)
   - `report.md`: human-readable governance report
   - `lineage_graph.html`: an offline, self-contained lineage leak map
   - `outputs/patches/*.py`: ready-to-run DataHub SDK remediation code
+
+  `--format` selects the report files, and `--format sarif` adds
+  `findings.sarif`, a SARIF 2.1.0 log (see §9.2).
 - **Source-agnostic**: the exact same detection runs against a live DataHub
   instance or the bundled synthetic fixture.
-- **CI-friendly**: `--fail-on-critical` returns a non-zero exit code when any
-  CRITICAL finding is present.
+- **CI-friendly**: `--fail-on {critical,high,medium}` returns exit code 2
+  when any finding is at or above that severity (`--fail-on-critical` is the
+  same as `--fail-on critical`).
 
 ---
 
@@ -262,8 +266,10 @@ airgap/
 │   └── rules.py        R1 + R2 detection
 ├── llm/ollama.py       local explanation layer
 ├── report/
+│   ├── findings_json.py  findings.json (versioned)
 │   ├── markdown.py     report.md
-│   └── graph_html.py   offline lineage leak map
+│   ├── graph_html.py   offline lineage leak map
+│   └── sarif.py        findings.sarif (SARIF 2.1.0)
 ├── remediate/patches.py  DataHub SDK remediation code generator
 └── data/
     ├── config.yaml     bundled default config (copy of the root config.yaml)
@@ -290,13 +296,78 @@ airgap audit --no-llm
 # Live DataHub
 airgap audit --source datahub --url https://your.acryl.io --token $TOKEN
 
-# CI gate
-airgap audit --fail-on-critical
+# CI gate: exit 2 on any HIGH or CRITICAL finding
+airgap audit --fail-on high
+
+# Only JSON and SARIF, for a code-scanning tool
+airgap audit --no-llm --format json --format sarif
 ```
 
 Config lookup: `--config PATH` if given, else `./config.yaml` in the current
 directory, else the default config bundled in `airgap/data/`. Outputs are
 written to `./outputs/` in the current directory unless `--out DIR` is given.
+
+### 9.1 `findings.json` schema
+
+```json
+{
+  "schema_version": 1,
+  "airgap_version": "0.1.0",
+  "generated_at": "2026-10-25T12:00:00Z",
+  "source": "fixture",
+  "findings": [ ... ]
+}
+```
+
+| Key | Type | Meaning |
+|---|---|---|
+| `schema_version` | integer | Version of this layout. It goes up when a key is removed, renamed or changes meaning. New keys can be added without a bump, so readers should ignore keys they do not know. |
+| `airgap_version` | string | `airgap.__version__` of the run. |
+| `generated_at` | string | UTC time of the run, ISO 8601 with a `Z` suffix, to the second. |
+| `source` | string | `fixture`, `datahub-lite` or `datahub`. |
+| `findings` | array | One object per finding, sorted by severity, then by blast radius (largest first), then by ID. |
+
+Each finding has these keys:
+
+| Key | Type | Meaning |
+|---|---|---|
+| `id` | string | For example `AIRGAP-R1-001`. Numbered per run, so the same leak can get a different ID in another run. |
+| `rule` | string | `R1` or `R2` (see §6). |
+| `title` | string | One-line summary. |
+| `severity` | string | `CRITICAL`, `HIGH` or `MEDIUM` (see §6, Severity). |
+| `asset_urn`, `asset_name` | string | The dataset the finding is about. |
+| `leaked_fields` | array of strings | R1: the downstream fields without a sensitive marker. Empty for R2. |
+| `evidence` | array of strings | R1: one lineage path per leaked field. R2: a one-line reason. |
+| `blast_radius` | integer | Number of downstream consumers of the asset. |
+| `consumers` | object | Downstream consumer count per entity type, for example `{"chart": 1}`. |
+| `remediation` | string | Suggested fix. |
+| `explanation` | string | Prose from the local LLM; empty with `--no-llm` or when Ollama is not reachable. |
+
+`tests/test_output_formats.py` pins these keys.
+
+### 9.2 SARIF output
+
+`--format sarif` writes `findings.sarif`, a SARIF 2.1.0 log with one run.
+The test suite validates it against the official
+[SARIF 2.1.0 JSON schema](https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json),
+a copy of which is in `tests/data/`.
+
+| SARIF | Comes from |
+|---|---|
+| `tool.driver.name`, `version` | `airgap`, `airgap.__version__` |
+| `tool.driver.rules` | R1 (`UntaggedPiiPropagation`) and R2 (`OwnerlessSensitiveAsset`) |
+| `result.ruleId`, `ruleIndex` | the finding's `rule` |
+| `result.level` | CRITICAL and HIGH map to `error`, MEDIUM to `warning` (and LOW to `note`). SARIF has no level above `error`. |
+| `result.message.text` | the title, plus the leaked fields |
+| `result.locations[0].logicalLocations[0]` | `name` is the asset name, `fullyQualifiedName` the asset URN |
+| `result.partialFingerprints["airgapFinding/v1"]` | SHA-256 of rule, asset URN and sorted leaked fields, so the same leak keeps the same fingerprint across runs (finding IDs do not) |
+| `result.properties` | `id`, `severity`, `blast_radius`, `consumers`, `leaked_fields`, `evidence`, `remediation`, and `explanation` when present |
+| `invocations[0].endTimeUtc` | the same time as `generated_at` in `findings.json` |
+| `run.properties.source` | the metadata source |
+
+A finding points at a catalog asset, not at a file, so results have a logical
+location and no physical location (file and line). Tools that need a file
+location for every result may not display them.
 
 ---
 

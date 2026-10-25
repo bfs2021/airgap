@@ -4,11 +4,12 @@
     airgap audit --config my.yaml    # explicit config (else ./config.yaml, else bundled)
     airgap audit --source datahub --url https://... --token ...
     airgap audit --no-llm            # deterministic only, skip Ollama
+    airgap audit --format sarif      # write only findings.sarif
+    airgap audit --fail-on high      # exit 2 on any HIGH or CRITICAL finding
 """
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
 from importlib import resources
@@ -20,7 +21,13 @@ from airgap.detect import run_rules
 from airgap.detect.findings import Severity
 from airgap.errors import AirgapError
 from airgap.remediate import generate_patches
-from airgap.report import write_graph_html, write_markdown
+from airgap.report import (
+    utc_now,
+    write_findings_json,
+    write_graph_html,
+    write_markdown,
+    write_sarif,
+)
 from airgap.sources import build_source
 
 #: File name looked up in the current working directory.
@@ -29,6 +36,21 @@ CONFIG_FILENAME = "config.yaml"
 DEFAULT_OUT = "outputs"
 #: Environment variable read for the DataHub token when --token is not given.
 TOKEN_ENV = "AIRGAP_DATAHUB_TOKEN"
+#: Report formats for --format, and the file each one writes.
+FORMATS = {
+    "json": "findings.json",
+    "md": "report.md",
+    "html": "lineage_graph.html",
+    "sarif": "findings.sarif",
+}
+#: Formats written when --format is not given.
+DEFAULT_FORMATS = ("json", "md", "html")
+#: --fail-on threshold to the severities that trigger exit code 2.
+FAIL_ON = {
+    "critical": {Severity.CRITICAL},
+    "high": {Severity.CRITICAL, Severity.HIGH},
+    "medium": {Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM},
+}
 
 _COLOR = {
     Severity.CRITICAL: "\033[91m",
@@ -175,28 +197,35 @@ def cmd_audit(args: argparse.Namespace) -> int:
         raise AirgapError(
             f"cannot use --out {args.out} as the output directory: {exc.strerror}"
         ) from None
-    json_path = os.path.join(args.out, "findings.json")
-    md_path = os.path.join(args.out, "report.md")
-    html_path = os.path.join(args.out, "lineage_graph.html")
-    with open(json_path, "w", encoding="utf-8") as fh:
-        json.dump(
-            {"source": source.name, "findings": [f.to_dict() for f in findings]},
-            fh,
-            indent=2,
-        )
-    write_markdown(findings, source.name, md_path)
-    write_graph_html(findings, graph, source.name, html_path)
+    generated_at = utc_now()
+    written: list[str] = []
+    for fmt in selected_formats(args.format):
+        path = os.path.join(args.out, FORMATS[fmt])
+        if fmt == "json":
+            write_findings_json(findings, source.name, path, generated_at)
+        elif fmt == "md":
+            write_markdown(findings, source.name, path)
+        elif fmt == "html":
+            write_graph_html(findings, graph, source.name, path)
+        else:
+            write_sarif(findings, source.name, path, generated_at)
+        written.append(path)
     patches = generate_patches(findings, args.out)
 
     _print_summary(findings)
-    print(f"  → {json_path}")
-    print(f"  → {md_path}")
-    print(f"  → {html_path}")
+    for path in written:
+        print(f"  → {path}")
     print(f"  → {len(patches)} remediation patch(es) in {os.path.join(args.out, 'patches')}/")
 
-    if args.fail_on_critical and any(f.severity == Severity.CRITICAL for f in findings):
+    if args.fail_on and any(f.severity in FAIL_ON[args.fail_on] for f in findings):
         return 2
     return 0
+
+
+def selected_formats(requested: list[str] | None) -> list[str]:
+    """Formats to write, in FORMATS order, without duplicates."""
+    wanted = set(requested or DEFAULT_FORMATS)
+    return [fmt for fmt in FORMATS if fmt in wanted]
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -232,9 +261,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output directory, relative to the current directory (default: ./outputs)",
     )
     a.add_argument(
+        "--format",
+        action="append",
+        choices=list(FORMATS),
+        help="Report format to write; repeat for several "
+        "(default: json, md and html)",
+    )
+    a.add_argument(
+        "--fail-on",
+        choices=list(FAIL_ON),
+        help="Exit with 2 if any finding is at or above this severity (CI mode)",
+    )
+    a.add_argument(
         "--fail-on-critical",
-        action="store_true",
-        help="Exit non-zero if any CRITICAL finding (CI mode)",
+        dest="fail_on",
+        action="store_const",
+        const="critical",
+        help="Same as --fail-on critical",
     )
     a.set_defaults(func=cmd_audit)
     return p

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `findings.json` now starts with `schema_version` (1), `airgap_version`
+  and `generated_at`. The layout is documented in `docs/DOCUMENTATION.md`.
+- `--format {json,md,html,sarif}` (repeatable) selects the report files.
+  The default is still `json`, `md` and `html`. `sarif` writes
+  `findings.sarif`, a SARIF 2.1.0 log.
+- `--fail-on {critical,high,medium}` exits with 2 when any finding is at or
+  above that severity. `--fail-on-critical` still works and means
+  `--fail-on critical`.
+
 ## [0.1.0] - 2026-10-25
 
 First public release, published on PyPI as `airgap-datahub`. The command and
