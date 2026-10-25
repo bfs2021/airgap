@@ -66,3 +66,26 @@ def test_properly_governed_assets_are_not_flagged():
     # tag; neither should be reported.
     assert "acme.analytics.dim_customer" not in names
     assert "acme.analytics.retention_calc" not in names
+
+
+def test_null_properties_tag_and_term_recognized_as_pii():
+    """Verify that tags and glossary terms without properties.name (properties: null)
+
+    have their URN prefix stripped and are properly matched against pii_markers.
+    """
+    from airgap.detect.findings import is_sensitive, normalize_markers
+    from airgap.sources.datahub import _tag_names
+
+    pii_set = normalize_markers(_cfg()["detection"]["pii_markers"])
+
+    # Tag urn:li:tag:PII with properties: null (properties: None)
+    tag_container = {"tags": [{"tag": {"urn": "urn:li:tag:PII", "properties": None}}]}
+    tags = _tag_names(tag_container, "tags")
+    assert tags == ("PII",)
+    assert is_sensitive(tags, pii_set) is True
+
+    # Glossary term urn:li:glossaryTerm:Email with properties: null
+    term_container = {"terms": [{"term": {"urn": "urn:li:glossaryTerm:Email", "properties": None}}]}
+    terms = _tag_names(term_container, "terms")
+    assert terms == ("Email",)
+    assert is_sensitive(terms, pii_set) is True
