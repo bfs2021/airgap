@@ -41,7 +41,7 @@ query dataset($urn: String!) {
         glossaryTerms { terms { term { urn properties { name } } } }
       }
     }
-    fineGrainedLineages { upstreams { path } downstreams { path } }
+    fineGrainedLineages { upstreams { urn path } downstreams { urn path } }
   }
 }
 """
@@ -152,14 +152,14 @@ class DataHubSource(MetadataSource):
             owners=owners,
             fields=tuple(fields),
         )
-        # Best-effort column-level lineage (paths are DataHub schemaField URNs).
+        # Column-level lineage. Each upstream/downstream is a SchemaFieldRef.
         field_edges: list[FieldLineage] = []
         for fg in (d.get("fineGrainedLineages") or []):
             for up in (fg.get("upstreams") or []):
                 for down in (fg.get("downstreams") or []):
-                    up_urn, up_field = _split_schema_field(up.get("path", ""))
-                    down_urn, down_field = _split_schema_field(down.get("path", ""))
-                    if up_urn and down_urn:
+                    up_urn, up_field = _field_ref(up)
+                    down_urn, down_field = _field_ref(down)
+                    if up_urn and down_urn and up_field and down_field:
                         field_edges.append(
                             FieldLineage(up_urn, up_field, down_urn, down_field)
                         )
@@ -185,6 +185,23 @@ class DataHubSource(MetadataSource):
         for urn in urns:
             graph.edges.extend(self._fetch_edges(urn))
         return graph
+
+
+def _field_ref(ref: dict | None) -> tuple[str, str]:
+    """Turn a GraphQL ``SchemaFieldRef`` into (dataset_urn, field_path).
+
+    DataHub's ``FineGrainedLineagesMapper`` fills ``urn`` with the dataset URN
+    and ``path`` with the bare field path, so those are used as they are. If
+    either value is a full ``urn:li:schemaField:(...)`` URN instead, it is split
+    with ``_split_schema_field`` as a fallback.
+    """
+    ref = ref or {}
+    urn = ref.get("urn") or ""
+    path = ref.get("path") or ""
+    for candidate in (urn, path):
+        if candidate.startswith("urn:li:schemaField:"):
+            return _split_schema_field(candidate)
+    return urn, path
 
 
 def _split_schema_field(path: str) -> tuple[str, str]:
