@@ -227,14 +227,16 @@ def test_turkish_dotted_capital_i_matches(tmp_path):
     assert found == ["sizinti"]
 
 
-@pytest.mark.xfail(strict=True, reason="B09: a duplicate URN silently replaces the earlier asset "
-                   "(add_asset overwrites), dropping its PII classification")
-def test_duplicate_urn_keeps_classification(tmp_path):
+def test_duplicate_urn_keeps_classification(tmp_path, capsys):
     c = Cat()
     a = c.ds("users", [("email", ["PII"])])
     c.ds("users", [("email", [])])
     c.col(a, c.ds("export", [("email", [])]), "email")
     assert [f.asset_name for f in run_rules(c.graph(tmp_path), _cfg())] == ["export"]
+    assert f"Fixture lists {a} 2 times" in capsys.readouterr().err
+    # Merging does not depend on which entry comes first.
+    g = c.graph(tmp_path, assets=[c.assets[1], c.assets[0], c.assets[2]])
+    assert [f.asset_name for f in run_rules(g, _cfg())] == ["export"]
 
 
 @pytest.mark.xfail(strict=True, raises=ValueError,
