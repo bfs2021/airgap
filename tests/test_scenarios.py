@@ -208,8 +208,6 @@ def test_leak_downstream_of_tagged_cycle(tmp_path):
     assert [f.asset_name for f in run_rules(c.graph(tmp_path), _cfg())] == ["marketing_export"]
 
 
-@pytest.mark.xfail(strict=True, reason="B07: a config without a detection block is not merged with "
-                   "defaults, so no PII markers apply and the audit silently looks clean")
 def test_config_without_detection_block_uses_defaults(tmp_path):
     c = Cat()
     c.ds("hr", [("tckn", ["PII"])], owned=False)

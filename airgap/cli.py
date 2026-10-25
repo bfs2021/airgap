@@ -124,6 +124,15 @@ def cmd_audit(args: argparse.Namespace) -> int:
 
     source = build_source(cfg)
     print(f"  · Fetching metadata from source: {source.name}")
+    from airgap.detect.settings import DetectionConfigError, detection_settings
+
+    try:
+        _det, notes = detection_settings(cfg)
+    except DetectionConfigError as exc:
+        print(f"airgap: error: {exc}", file=sys.stderr)
+        return 1
+    for note in notes:
+        print(f"  ! {note}", file=sys.stderr)
     graph = source.fetch()
     print(
         f"  · Loaded {len(graph.assets)} assets, {len(graph.edges)} lineage edges, "
