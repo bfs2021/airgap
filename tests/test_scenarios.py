@@ -237,11 +237,10 @@ def test_duplicate_urn_keeps_classification(tmp_path):
     assert [f.asset_name for f in run_rules(c.graph(tmp_path), _cfg())] == ["export"]
 
 
-@pytest.mark.xfail(strict=True, raises=ValueError,
-                   reason="B10: write_graph_html calls max() on empty layers for an empty catalog")
 def test_empty_catalog_renders_graph(tmp_path):
     g = Cat().graph(tmp_path)
     write_graph_html([], g, "fixture", str(tmp_path / "g.html"))
+    assert "0 finding(s)" in (tmp_path / "g.html").read_text(encoding="utf-8")
 
 
 @pytest.mark.xfail(strict=True, raises=RecursionError,
