@@ -153,10 +153,13 @@ and ML entities that consume the data).
 
 ### 5.4 Normalization
 GraphQL responses are mapped into the `MetadataGraph` model
-(`airgap/model.py`): `Asset`, `Field`, `LineageEdge`, `FieldLineage`. DataHub
-`schemaField` URNs (`urn:li:schemaField:(<datasetUrn>,<fieldPath>)`) are split
-back into `(dataset_urn, field_path)` so column-level lineage lines up with the
-schema.
+(`airgap/model.py`): `Asset`, `Field`, `LineageEdge`, `FieldLineage`. In the
+GraphQL `fineGrainedLineages` response each upstream and downstream is a
+`SchemaFieldRef { urn path }`, where `urn` is the dataset URN and `path` is the
+field path, so they become `FieldLineage` values directly. Full `schemaField`
+URNs (`urn:li:schemaField:(<datasetUrn>,<fieldPath>)`), which is what DataHub
+Lite returns, are split back into `(dataset_urn, field_path)` so column-level
+lineage lines up with the schema.
 
 ### 5.5 Writing back (remediation)
 Airgap never mutates DataHub directly. Instead it **generates** DataHub Python

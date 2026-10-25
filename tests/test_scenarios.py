@@ -161,8 +161,6 @@ def test_gms_tag_without_properties_uses_urn_name(monkeypatch):
 
 # --------------------------------------------------------------------- known bugs (xfail)
 
-@pytest.mark.xfail(strict=True, reason="B01: GMS SchemaFieldRef.path is the bare field path, but "
-                   "_fetch_dataset expects a schemaField URN and never requests SchemaFieldRef.urn")
 def test_gms_column_lineage_is_loaded(monkeypatch):
     src = DataHubSource("http://gms.invalid", "")
     up = _gms_dataset("users", [("email", ["PII"])], owners=["urn:li:corpuser:a"])
