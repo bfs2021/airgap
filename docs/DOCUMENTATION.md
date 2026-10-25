@@ -299,6 +299,10 @@ written to `./outputs/` in the current directory unless `--out DIR` is given.
 - **Stretch (designed, not yet enabled):** R3 broken-classification-chain, R4
   policy/retention gaps, and reading directly through the **DataHub MCP Server**
   in addition to GraphQL.
-- Column-level precision on a live instance depends on the platform emitting
-  `fineGrainedLineages`; where it's absent, R1 falls back to dataset-level
-  lineage.
+- R1 depends on column-level lineage. It walks only `fineGrainedLineages`
+  (the graph's `field_edges`) and never falls back to dataset-level lineage,
+  so a flow that has no column-level edges produces no R1 finding.
+  Dataset-level edges are used only to compute blast radius and severity.
+  R2 still flags an ownerless dataset that carries a sensitive marker
+  directly, but it can only see PII that arrives through lineage when
+  column-level edges exist.
