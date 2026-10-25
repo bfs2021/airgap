@@ -115,6 +115,18 @@ def test_r2_ownerless_sensitive_dataset(tmp_path):
     assert _summary(run_rules(c.graph(tmp_path), _cfg())) == [("R2", "hr", Severity.MEDIUM, 0)]
 
 
+def test_r1_has_no_dataset_level_fallback(tmp_path):
+    """B05: R1 walks only column-level lineage, as docs/DOCUMENTATION.md says.
+
+    A dataset-level edge alone does not produce an R1 finding.
+    """
+    c = Cat()
+    a = c.ds("users", [("email", ["PII"])])
+    b = c.ds("users_export", [("email", [])])
+    c.edge(a, b)
+    assert run_rules(c.graph(tmp_path), _cfg()) == []
+
+
 def test_long_chain_upstream_first_is_fine(tmp_path):
     c = Cat()
     urns = [c.ds(f"t{i}", [("x", [])]) for i in range(1500)]
@@ -196,16 +208,6 @@ def test_leak_downstream_of_tagged_cycle(tmp_path):
     c.col(wh, mk, "email")
     c.edge(mk, c.dashboard("growth"))
     assert [f.asset_name for f in run_rules(c.graph(tmp_path), _cfg())] == ["marketing_export"]
-
-
-@pytest.mark.xfail(strict=True, reason="B05: docs/DOCUMENTATION.md says R1 falls back to dataset-level "
-                   "lineage when column lineage is absent; rule_r1 only walks field_edges")
-def test_r1_dataset_level_fallback(tmp_path):
-    c = Cat()
-    a = c.ds("users", [("email", ["PII"])])
-    b = c.ds("users_export", [("email", [])])
-    c.edge(a, b)
-    assert [f.rule for f in run_rules(c.graph(tmp_path), _cfg())] == ["R1"]
 
 
 @pytest.mark.xfail(strict=True, reason="B07: a config without a detection block is not merged with "
