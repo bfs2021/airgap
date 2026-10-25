@@ -27,6 +27,13 @@ jobs:
           python -m pip install --upgrade pip build twine
           python -m build
           python -m twine check --strict dist/*
+      - name: Run the tests from the unpacked sdist
+        run: |
+          python -m pip install pytest dist/*.whl
+          mkdir "$RUNNER_TEMP/sdist"
+          tar -xzf dist/*.tar.gz -C "$RUNNER_TEMP/sdist"
+          cd "$RUNNER_TEMP"/sdist/airgap_datahub-*/
+          python -m pytest -q
       - name: Smoke-test the wheel from an empty directory
         run: |
           python -m venv "$RUNNER_TEMP/venv"
