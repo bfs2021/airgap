@@ -108,8 +108,9 @@ Step by step:
 1. **Fetch.** A `MetadataSource` (`FixtureSource` or `DataHubSource`) returns a
    fully normalized `MetadataGraph`. Both sources produce the identical shape,
    so nothing downstream knows or cares where the metadata came from.
-2. **Detect.** `run_rules()` applies R1 and R2 over the graph, computing a
-   lineage-evidence path and a blast-radius severity for each finding. This is
+2. **Detect.** `run_rules()` applies R1 and R2 over the graph, computing
+   evidence (the column-level lineage path for R1, a one-line reason for R2)
+   and a blast-radius severity for each finding. This is
    plain, unit-tested Python — **no LLM is involved in deciding a finding.**
 3. **Explain.** If Ollama is reachable, each finding is sent to a local model
    which returns a 2–3 sentence explanation and urgency assessment. If Ollama is

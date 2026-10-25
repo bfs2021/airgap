@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-10-23
+## [0.1.0] - 2026-10-25
 
 First public release, published on PyPI as `airgap-datahub`. The command and
 the import name are `airgap`.
@@ -39,7 +39,9 @@ the import name are `airgap`.
 - Severity scoring by blast radius (transitive downstream consumers).
   Human-facing consumers (dashboards, charts) escalate a finding to CRITICAL.
   Thresholds and the PII marker vocabulary are configurable in `config.yaml`.
-- Lineage evidence paths on every finding.
+- Evidence on every finding: R1 findings carry the column-level lineage path
+  from the PII origin to each leaked field, and R2 findings carry a one-line
+  reason.
 - Optional explanations from a local Ollama model (localhost only). The LLM
   never decides findings, and the audit still completes if Ollama is
   unreachable.
@@ -52,8 +54,8 @@ the import name are `airgap`.
   CLI's config and output-directory defaults (`tests/`).
 - Sample outputs in `examples/`, plus documentation, PRD, demo film, slide
   deck and media in `docs/`.
-- GitHub Actions: tests on Python 3.10–3.12, and PyPI Trusted Publishing on
-  release.
+- GitHub Actions: tests on Python 3.10, 3.11 and 3.12, and PyPI Trusted
+  Publishing on release.
 
 [Unreleased]: https://github.com/zelihaguven/airgap/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/zelihaguven/airgap/releases/tag/v0.1.0
