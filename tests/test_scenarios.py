@@ -216,8 +216,6 @@ def test_config_without_detection_block_uses_defaults(tmp_path):
     assert run_rules(c.graph(tmp_path), {"source": "fixture"}) != []
 
 
-@pytest.mark.xfail(strict=True, reason="B08: str.lower() maps Turkish 'İ' to 'i' + U+0307, so "
-                   "'KİŞİSEL' does not match the marker 'Kişisel'")
 def test_turkish_dotted_capital_i_matches(tmp_path):
     c = Cat()
     a = c.ds("kaynak", [("tc", ["Kişisel"])])
