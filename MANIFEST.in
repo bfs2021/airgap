@@ -1,0 +1,5 @@
+# Extra files for the source distribution. The tests read the example
+# config at the repository root, so ship it so that pytest also passes
+# from an unpacked sdist. It is not part of the wheel.
+include config.yaml
+recursive-include tests *.py
