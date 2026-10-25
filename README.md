@@ -230,8 +230,6 @@ Known gaps in the GMS path, tracked for v0.2:
 
 - Column-level lineage is not parsed correctly, so R1 does not fire against a
   live GMS yet ([#2](https://github.com/zelihaguven/airgap/issues/2)).
-- Tags and terms without `properties.name` are not matched as PII markers
-  ([#3](https://github.com/zelihaguven/airgap/issues/3)).
 - Dashboards and charts are not loaded as assets, so they do not escalate
   severity, and `lineage_depth` is unused
   ([#4](https://github.com/zelihaguven/airgap/issues/4)).
