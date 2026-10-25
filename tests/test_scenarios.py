@@ -255,8 +255,6 @@ def test_long_chain_downstream_first_renders_graph(tmp_path):
     assert depths[urns[0]] == 0 and depths[urns[-1]] == 599
 
 
-@pytest.mark.xfail(strict=True, reason="B15: transitive_downstream counts the asset itself inside a "
-                   "cycle, contradicting its docstring ('excluding itself') and inflating severity")
 def test_cycle_blast_radius_excludes_self(tmp_path):
     c = Cat()
     a = c.ds("A", [("email", ["PII"])])
