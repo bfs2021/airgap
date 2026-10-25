@@ -244,9 +244,6 @@ def test_empty_catalog_renders_graph(tmp_path):
     write_graph_html([], g, "fixture", str(tmp_path / "g.html"))
 
 
-@pytest.mark.xfail(strict=True, raises=RecursionError,
-                   reason="B11: graph_html._depths recurses ~3 frames per hop; a chain listed "
-                   "downstream-first overflows above 332 nodes (498 on 3.12)")
 def test_long_chain_downstream_first_renders_graph(tmp_path):
     c = Cat()
     urns = [c.ds(f"t{i}", [("x", [])]) for i in range(600)]
@@ -254,6 +251,10 @@ def test_long_chain_downstream_first_renders_graph(tmp_path):
         c.edge(up, down)
     g = c.graph(tmp_path, assets=c.assets[::-1])
     write_graph_html([], g, "fixture", str(tmp_path / "g.html"))
+    from airgap.report.graph_html import _depths
+
+    depths = _depths(g)
+    assert depths[urns[0]] == 0 and depths[urns[-1]] == 599
 
 
 @pytest.mark.xfail(strict=True, reason="B15: transitive_downstream counts the asset itself inside a "

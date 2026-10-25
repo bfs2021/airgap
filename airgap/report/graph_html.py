@@ -27,18 +27,47 @@ _MARGIN = 40
 
 
 def _depths(graph: MetadataGraph) -> dict[str, int]:
+    """Longest-path layer of each asset, ignoring edges back into the current path.
+
+    Iterative depth-first search with an explicit stack, so long lineage chains
+    cannot hit Python's recursion limit. It visits nodes in the same order as
+    the former recursive version and returns the same layers, cycles included.
+    """
+    upstream: dict[str, list[str]] = {}
+    for e in graph.edges:
+        upstream.setdefault(e.downstream, []).append(e.upstream)
+
     memo: dict[str, int] = {}
+    # Number of times each URN appears in the frames below the top of the stack.
+    on_path: dict[str, int] = {}
 
-    def depth(urn: str, seen: frozenset[str]) -> int:
-        if urn in memo:
-            return memo[urn]
-        ups = [u for u in graph.upstream(urn) if u not in seen]
-        d = 0 if not ups else 1 + max(depth(u, seen | {urn}) for u in ups)
-        memo[urn] = d
-        return d
+    def frame(urn: str) -> list:
+        ups = [u for u in upstream.get(urn, []) if not on_path.get(u)]
+        return [urn, ups, 0, -1]  # urn, upstreams to visit, next index, best depth
 
-    for urn in graph.assets:
-        depth(urn, frozenset())
+    for root in graph.assets:
+        if root in memo:
+            continue
+        stack = [frame(root)]
+        while stack:
+            top = stack[-1]
+            urn, ups, i, _best = top
+            if i < len(ups):
+                top[2] = i + 1
+                u = ups[i]
+                if u in memo:
+                    top[3] = max(top[3], memo[u])
+                    continue
+                on_path[urn] = on_path.get(urn, 0) + 1
+                stack.append(frame(u))
+                continue
+            d = 0 if not ups else 1 + top[3]
+            memo[urn] = d
+            stack.pop()
+            if stack:
+                parent = stack[-1]
+                on_path[parent[0]] -= 1
+                parent[3] = max(parent[3], d)
     return memo
 
 
