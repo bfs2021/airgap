@@ -12,6 +12,7 @@ import json
 import sys
 from importlib import resources
 
+from airgap.errors import AirgapError
 from airgap.model import Asset, Field, FieldLineage, LineageEdge, MetadataGraph
 from airgap.sources.base import MetadataSource
 
@@ -30,46 +31,62 @@ class FixtureSource(MetadataSource):
             bundled = resources.files("airgap.data").joinpath(BUNDLED_FIXTURE)
             raw = json.loads(bundled.read_text(encoding="utf-8"))
         else:
-            with open(self.path, "r", encoding="utf-8") as fh:
-                raw = json.load(fh)
+            try:
+                with open(self.path, "r", encoding="utf-8") as fh:
+                    raw = json.load(fh)
+            except FileNotFoundError:
+                raise AirgapError(f"fixture file not found: {self.path}") from None
+            except json.JSONDecodeError as exc:
+                raise AirgapError(
+                    f"fixture file {self.path} is not valid JSON: {exc}"
+                ) from None
+        try:
+            return _build_graph(raw)
+        except KeyError as exc:
+            raise AirgapError(
+                f"fixture file {self.path or BUNDLED_FIXTURE}: an entry is missing "
+                f"the required key {exc.args[0]!r}"
+            ) from None
 
-        graph = MetadataGraph()
-        for a in _merge_duplicate_assets(raw.get("assets", [])):
-            fields = tuple(
-                Field(
-                    path=f["path"],
-                    native_type=f.get("native_type", ""),
-                    tags=tuple(f.get("tags", [])),
-                    glossary_terms=tuple(f.get("glossary_terms", [])),
-                )
-                for f in a.get("fields", [])
-            )
-            graph.add_asset(
-                Asset(
-                    urn=a["urn"],
-                    name=a["name"],
-                    entity_type=a.get("entity_type", "dataset"),
-                    platform=a.get("platform", ""),
-                    tags=tuple(a.get("tags", [])),
-                    owners=tuple(a.get("owners", [])),
-                    fields=fields,
-                )
-            )
 
-        graph.edges = [
-            LineageEdge(upstream=e["upstream"], downstream=e["downstream"])
-            for e in raw.get("edges", [])
-        ]
-        graph.field_edges = [
-            FieldLineage(
-                up_urn=fe["up_urn"],
-                up_field=fe["up_field"],
-                down_urn=fe["down_urn"],
-                down_field=fe["down_field"],
+def _build_graph(raw: dict) -> MetadataGraph:
+    graph = MetadataGraph()
+    for a in _merge_duplicate_assets(raw.get("assets", [])):
+        fields = tuple(
+            Field(
+                path=f["path"],
+                native_type=f.get("native_type", ""),
+                tags=tuple(f.get("tags", [])),
+                glossary_terms=tuple(f.get("glossary_terms", [])),
             )
-            for fe in raw.get("field_edges", [])
-        ]
-        return graph
+            for f in a.get("fields", [])
+        )
+        graph.add_asset(
+            Asset(
+                urn=a["urn"],
+                name=a["name"],
+                entity_type=a.get("entity_type", "dataset"),
+                platform=a.get("platform", ""),
+                tags=tuple(a.get("tags", [])),
+                owners=tuple(a.get("owners", [])),
+                fields=fields,
+            )
+        )
+
+    graph.edges = [
+        LineageEdge(upstream=e["upstream"], downstream=e["downstream"])
+        for e in raw.get("edges", [])
+    ]
+    graph.field_edges = [
+        FieldLineage(
+            up_urn=fe["up_urn"],
+            up_field=fe["up_field"],
+            down_urn=fe["down_urn"],
+            down_field=fe["down_field"],
+        )
+        for fe in raw.get("field_edges", [])
+    ]
+    return graph
 
 
 def _union(*lists: list) -> list:

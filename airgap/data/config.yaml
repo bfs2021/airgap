@@ -12,7 +12,7 @@ fixture_path: ""
 
 datahub:
   url: ""        # e.g. https://your-company.acryl.io  (or http://localhost:9002)
-  token: ""      # DataHub personal access token
+  token: ""      # DataHub personal access token (or set AIRGAP_DATAHUB_TOKEN)
   # Max downstream hops to walk when building lineage from a live instance.
   lineage_depth: 4
 
@@ -22,7 +22,6 @@ datahub:
 ollama:
   url: http://localhost:11434
   model: qwen2.5:7b        # good at structured/JSON output
-  prose_model: llama3.1:latest
   timeout_seconds: 120
   enabled: true            # set false to skip LLM and emit deterministic-only report
 
