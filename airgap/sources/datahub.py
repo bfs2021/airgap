@@ -59,6 +59,11 @@ query lineage($urn: String!, $dir: LineageDirection!) {
 """
 
 
+def _short(urn: str) -> str:
+    """Extract the simple tag or term identifier from a DataHub URN."""
+    return urn.rsplit(":", 1)[-1] if urn else ""
+
+
 def _tag_names(container: dict | None, key: str) -> tuple[str, ...]:
     if not container:
         return ()
@@ -66,7 +71,12 @@ def _tag_names(container: dict | None, key: str) -> tuple[str, ...]:
     for item in container.get(key, []) or []:
         node = item.get("tag") or item.get("term") or {}
         props = node.get("properties") or {}
-        name = props.get("name") or node.get("urn", "")
+        raw = props.get("name")
+        if not raw:
+            urn = node.get("urn", "")
+            name = _short(urn)
+        else:
+            name = raw
         if name:
             out.append(name)
     return tuple(out)
