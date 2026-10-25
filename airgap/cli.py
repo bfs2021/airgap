@@ -134,8 +134,17 @@ def _enrich_with_llm(findings, cfg) -> None:
         )
         return
     print(f"  · Explaining findings locally via Ollama ({llm.model})...")
+    failed = 0
     for f in findings:
         f.explanation = llm.enrich(f)
+        if not f.explanation:
+            failed += 1
+    if failed:
+        print(
+            f"  ! Ollama could not explain {failed} finding(s) — "
+            "writing the deterministic report without prose.",
+            file=sys.stderr,
+        )
 
 
 def _print_summary(findings) -> None:
