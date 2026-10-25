@@ -346,6 +346,15 @@ issues labeled
 [`good first issue`](https://github.com/zelihaguven/airgap/labels/good%20first%20issue)
 are a good place to begin. Release history is in [CHANGELOG.md](CHANGELOG.md).
 
+### What may change
+
+Airgap started as a project for a DataHub hackathon. Its detection code
+([`airgap/detect/`](airgap/detect/) and [`airgap/model.py`](airgap/model.py))
+does not import DataHub or its SDK (its model only follows DataHub's URN
+shape), and besides DataHub Lite and GMS it already reads a JSON catalog file
+(`source: fixture`). A source-agnostic core, with DataHub as one optional
+source and possibly more sources next to it, is being considered for v0.3.
+
 ## Origin
 
 Airgap started as an entry to the DataHub Agent Hackathon in August 2026 and is

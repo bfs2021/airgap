@@ -1,4 +1,4 @@
-# Airgap — Technical Documentation
+# Airgap Technical Documentation
 
 > Local-first data governance & PII lineage auditor for DataHub.
 > Built for the DataHub Agent Hackathon (Wildcard / Regulatory Automation).
@@ -11,7 +11,7 @@ end to end, and exactly how DataHub is integrated.**
 ## 1. What Airgap is
 
 Airgap is a command-line agent that audits a data catalog for **PII governance
-leaks** — places where sensitive data has flowed downstream through lineage but
+leaks**: places where sensitive data has flowed downstream through lineage but
 lost its classification, or ended up in an asset that nobody owns. It reads its
 context from **DataHub** (schemas, tags, glossary terms, ownership, and
 lineage), applies deterministic detection rules, and uses a **local LLM
@@ -38,9 +38,9 @@ The problem is what happens next:
    `marketing_enriched.email` column often carries no PII tag at all.
 3. Those derived assets frequently have **no owner**, so when a regulator or an
    incident asks "who is responsible for this PII?", there's no answer.
-4. Auditing this by hand means walking the lineage graph node by node — it does
-   not scale.
-5. The obvious fix — point an LLM agent at your catalog — usually means shipping
+4. Auditing this by hand means walking the lineage graph node by node, which
+   does not scale.
+5. The obvious fix, pointing an LLM agent at your catalog, usually means shipping
    your schemas and lineage to a **cloud model**. For a tool whose entire job is
    protecting sensitive data, that is self-defeating.
 
@@ -51,23 +51,23 @@ that runs entirely locally.
 
 ## 3. What it does (features)
 
-- **Reads DataHub metadata** — datasets, schema fields, field-level tags &
+- **Reads DataHub metadata**: datasets, schema fields, field-level tags &
   glossary terms, dataset-level tags, ownership, and dataset- and column-level
   lineage.
-- **Detects governance leaks** with two deterministic rules (R1, R2 — see §6).
-- **Scores severity by blast radius** — how many downstream consumers a leak
-  reaches, escalating to CRITICAL when PII reaches human-facing BI (dashboards,
-  charts).
-- **Explains findings locally** via Ollama — GDPR-framed, plain-language prose,
+- **Detects governance leaks** with two deterministic rules (R1 and R2, see §6).
+- **Scores severity by blast radius**, meaning how many downstream consumers
+  a leak reaches, escalating to CRITICAL when PII reaches human-facing BI
+  (dashboards, charts).
+- **Explains findings locally** via Ollama, in GDPR-framed, plain-language prose,
   never deciding the finding, only describing it.
 - **Produces four artifacts** per run:
-  - `findings.json` — machine-readable findings
-  - `report.md` — human-readable governance report
-  - `lineage_graph.html` — an offline, self-contained lineage leak map
-  - `outputs/patches/*.py` — ready-to-run DataHub SDK remediation code
-- **Source-agnostic** — the exact same detection runs against a live DataHub
+  - `findings.json`: machine-readable findings
+  - `report.md`: human-readable governance report
+  - `lineage_graph.html`: an offline, self-contained lineage leak map
+  - `outputs/patches/*.py`: ready-to-run DataHub SDK remediation code
+- **Source-agnostic**: the exact same detection runs against a live DataHub
   instance or the bundled synthetic fixture.
-- **CI-friendly** — `--fail-on-critical` returns a non-zero exit code when any
+- **CI-friendly**: `--fail-on-critical` returns a non-zero exit code when any
   CRITICAL finding is present.
 
 ---
@@ -77,7 +77,7 @@ that runs entirely locally.
 ```
 ┌─ source ─────────────┐
 │ DataHub (GraphQL)    │  read-only, HTTPS
-│   — or —             │
+│   or                 │
 │ bundled fixture JSON │
 └──────────┬───────────┘
            │  normalize
@@ -93,7 +93,7 @@ that runs entirely locally.
 │ blast radius,        │   + blast-radius severity
 │ remediation          │
 └──────────┬───────────┘
-           │  enrich() — local Ollama, localhost:11434 only
+           │  enrich(): local Ollama, localhost:11434 only
            ▼
 ┌─ Outputs ────────────┐
 │ findings.json        │
@@ -111,10 +111,11 @@ Step by step:
 2. **Detect.** `run_rules()` applies R1 and R2 over the graph, computing
    evidence (the column-level lineage path for R1, a one-line reason for R2)
    and a blast-radius severity for each finding. This is
-   plain, unit-tested Python — **no LLM is involved in deciding a finding.**
+   plain, unit-tested Python, and **no LLM is involved in deciding a finding.**
 3. **Explain.** If Ollama is reachable, each finding is sent to a local model
-   which returns a 2–3 sentence explanation and urgency assessment. If Ollama is
-   not running, Airgap still emits the complete deterministic report.
+   which returns an explanation of two or three sentences and an urgency
+   assessment. If Ollama is not running, Airgap still emits the complete
+   deterministic report.
 4. **Emit.** Airgap writes the four artifacts and prints a colored console
    summary.
 
@@ -126,7 +127,7 @@ mistakes are low-risk and easy to review.
 
 ## 5. How DataHub is integrated
 
-DataHub is Airgap's **context platform** — the source of truth for schema,
+DataHub is Airgap's **context platform**, the source of truth for schema,
 classification, ownership, and lineage. Integration happens in
 `airgap/sources/datahub.py` (`DataHubSource`) through DataHub's **GraphQL API**,
 using only read-only queries.
@@ -141,8 +142,8 @@ For each URN it queries the `dataset(urn:)` resolver for:
 - dataset-level `tags`
 - `ownership { owners }`
 - `schemaMetadata { fields { fieldPath nativeDataType globalTags glossaryTerms } }`
-  — this is where **field-level PII classification** lives
-- `fineGrainedLineages` — DataHub's **column-level lineage**, used for precise
+  (this is where **field-level PII classification** lives)
+- `fineGrainedLineages`: DataHub's **column-level lineage**, used for precise
   field-to-field leak tracing
 
 ### 5.3 Reading lineage
@@ -160,43 +161,43 @@ schema.
 ### 5.5 Writing back (remediation)
 Airgap never mutates DataHub directly. Instead it **generates** DataHub Python
 SDK code (`acryl-datahub`) that a data engineer reviews and runs to fix each
-finding — emitting `GlobalTagsClass` / `GlossaryTermsClass` on the leaked fields
-(R1) or `OwnershipClass` on the ownerless asset (R2). These artifacts are
+finding. The code emits `GlobalTagsClass` / `GlossaryTermsClass` on the leaked
+fields (R1) or `OwnershipClass` on the ownerless asset (R2). These artifacts are
 designed to drop straight into a pull request.
 
 ### 5.6 Three sources, one model
 Airgap has three interchangeable metadata sources, all normalizing into the same
 `MetadataGraph`:
 
-1. **`datahub-lite` — a real, local, Docker-free DataHub.** This is the primary
+1. **`datahub-lite`: a real, local, Docker-free DataHub.** This is the primary
    integration for reproducibility. `scripts/setup_datahub_lite.sh` installs
    [DataHub Lite](https://docs.datahub.com/docs/datahub-lite) (a DuckDB-backed
    DataHub), converts the Acme fixture into genuine DataHub metadata aspects via
-   the official SDK (`scripts/seed_datahub_lite.py` — `SchemaMetadata`,
+   the official SDK (`scripts/seed_datahub_lite.py` with `SchemaMetadata`,
    `GlobalTags`, `GlossaryTerms`, `Ownership`, `UpstreamLineage` with
    `FineGrainedLineage`, `DashboardInfo`/`ChartInfo`), and imports them.
    `DataHubLiteSource` then reads them back through the `datahub lite` CLI. This
    proves Airgap runs against real DataHub metadata with **no Docker and no
-   cloud** — the whole point of a local-first tool.
-2. **`datahub` — live GMS** via GraphQL (§5.1–5.4), for any hosted instance.
-3. **`fixture` — synthetic**, zero-setup, using the *same URN format and schema
+   cloud**, which is the whole point of a local-first tool.
+2. **`datahub`: live GMS** via GraphQL (§5.1 to §5.4), for any hosted instance.
+3. **`fixture`: synthetic**, zero-setup, using the *same URN format and schema
    model* as real DataHub. Useful for a dependency-free demo and as the seed for
    DataHub Lite.
 
 Because all three produce an identical `MetadataGraph`, the detection engine is
-exercised the same way regardless of source — the synthetic fixture and the real
+exercised the same way regardless of source: the synthetic fixture and the real
 DataHub Lite instance yield the **same five findings**.
 
 ---
 
 ## 6. Detection rules
 
-### R1 — Untagged PII propagation
+### R1: Untagged PII propagation
 A field classified as PII/sensitive flows, through column-level lineage, into a
 downstream field/dataset that carries **no equivalent classification.**
 
 Algorithm:
-1. Find **true PII origins** — sensitive fields with no sensitive upstream field
+1. Find **true PII origins**: sensitive fields with no sensitive upstream field
    (where PII first enters the graph).
 2. BFS the column-level lineage from each origin.
 3. Any reached downstream field that is **not** itself classified **and** whose
@@ -207,17 +208,17 @@ Algorithm:
 Example evidence:
 `acme.public.users.email → acme.staging.stg_users.email → acme.analytics.dim_customer.email → acme.marketing.marketing_enriched.email`
 
-### R2 — Ownerless sensitive asset
-A dataset that holds sensitive data — directly, or by receiving it through
-lineage from a classified source — has **no owner**, so nobody is accountable.
+### R2: Ownerless sensitive asset
+A dataset that holds sensitive data (directly, or by receiving it through
+lineage from a classified source) has **no owner**, so nobody is accountable.
 
 ### Severity (blast radius)
 Severity is driven by the transitive downstream consumers of the offending
 asset:
-- **CRITICAL** — reaches a human-facing consumer (dashboard/chart), i.e. PII is
+- **CRITICAL**: reaches a human-facing consumer (dashboard/chart), i.e. PII is
   visible to real users, or blast radius ≥ configured threshold.
-- **HIGH** — has downstream consumers, but none human-facing.
-- **MEDIUM** — internal only, no downstream consumers yet.
+- **HIGH**: has downstream consumers, but none human-facing.
+- **MEDIUM**: internal only, no downstream consumers yet.
 
 All thresholds and the PII marker vocabulary are configurable in `config.yaml`.
 
@@ -230,7 +231,7 @@ each finding it sends the structured facts (rule, asset, leaked fields, lineage
 evidence, blast radius) and asks for a short DPO-facing explanation of the risk
 and urgency. Key guarantees:
 - The prompt forbids inventing facts beyond what's given.
-- A failure or an unreachable Ollama never breaks the audit — the report is
+- A failure or an unreachable Ollama never breaks the audit; the report is
   still produced deterministically.
 - No metadata is ever sent anywhere but localhost.
 
