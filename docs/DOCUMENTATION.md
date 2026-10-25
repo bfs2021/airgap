@@ -314,7 +314,7 @@ written to `./outputs/` in the current directory unless `--out DIR` is given.
 ```json
 {
   "schema_version": 1,
-  "airgap_version": "0.1.0",
+  "airgap_version": "0.2.0",
   "generated_at": "2026-10-25T12:00:00Z",
   "source": "fixture",
   "findings": [ ... ]

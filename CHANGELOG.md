@@ -7,16 +7,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-25
+
+Bug fixes from the v0.1.0 QA campaign, a faster DataHub Lite read, readable
+CLI errors, a versioned `findings.json` and SARIF output.
+
 ### Added
 
+- `airgap --version` prints the installed version (#40).
+- `AIRGAP_DATAHUB_TOKEN` for the GMS token. Precedence is `--token`, then
+  `AIRGAP_DATAHUB_TOKEN`, then `datahub.token` (#40).
 - `findings.json` now starts with `schema_version` (1), `airgap_version`
-  and `generated_at`. The layout is documented in `docs/DOCUMENTATION.md`.
+  and `generated_at`. The layout is documented in `docs/DOCUMENTATION.md`
+  (#43, fixes #6).
 - `--format {json,md,html,sarif}` (repeatable) selects the report files.
   The default is still `json`, `md` and `html`. `sarif` writes
-  `findings.sarif`, a SARIF 2.1.0 log.
+  `findings.sarif`, a SARIF 2.1.0 log (#43, fixes #6).
 - `--fail-on {critical,high,medium}` exits with 2 when any finding is at or
   above that severity. `--fail-on-critical` still works and means
-  `--fail-on critical`.
+  `--fail-on critical` (#43, fixes #6).
+- GMS source: dashboards, charts and other lineage consumers are loaded as
+  assets, so they can escalate a finding to CRITICAL. `datahub.lineage_depth`
+  is now honored and lineage results are paged (#30, fixes #4).
+- Scenario tests from the v0.1.0 QA campaign (#14, #17).
+
+### Fixed
+
+- GMS source: tags and glossary terms without `properties.name` are matched
+  as PII markers (#9, fixes #3).
+- GMS source: column-level lineage is read from `SchemaFieldRef` `urn` and
+  `path`, so R1 fires against GMS (#16, fixes #2).
+- The `datahub-lite` extra installs DuckDB again with acryl-datahub
+  1.7.0.14 and later (#31, fixes #18).
+- Leaks downstream of a classified lineage cycle are found (#32, fixes #19).
+- A config without a `detection:` block uses the bundled defaults, and an
+  empty `pii_markers` is a config error (#34, fixes #20).
+- Turkish dotted and dotless i match in markers, for example `KİŞİSEL` and
+  `Kişisel` (#35, fixes #21).
+- Fixture entries that share a URN are merged instead of overwritten
+  (#36, fixes #22).
+- The lineage graph renders for an empty catalog (#37, fixes #23), and graph
+  layers are computed without recursion, so long chains no longer crash
+  (#38, fixes #24).
+- Blast radius no longer counts the asset itself inside a lineage cycle
+  (#39, fixes #27).
+- Remediation patches from an earlier run are removed when `--out` is reused
+  (#41, fixes #25).
+- Ollama errors are no longer written into the report as explanations
+  (#44, fixes #29).
+- User mistakes and unreachable services print one `airgap: error:` line
+  and exit with 1 instead of a Python traceback (#40).
+- The sdist ships `config.yaml` and the tests, so pytest passes from an
+  unpacked sdist (#12).
+
+### Changed
+
+- `ollama.prose_model` is removed from the sample configs. No code read it,
+  and a config that still sets it keeps working (#40).
+- Docs: README refresh, R1 has no dataset-level fallback, and a "What may
+  change" note (#10, #11, #13, #15).
+
+### Performance
+
+- Lineage edges are indexed, so detection is no longer quadratic
+  (#33, fixes #5).
+- The `datahub-lite` source reads the catalog with one `datahub lite export`
+  and falls back to per-entity reads if the export fails (#42, fixes #26).
+
+### Contributors
+
+Thanks to @evandroribeiro94 (#9) and @bfs2021 (#41, #44) for their first
+contributions.
 
 ## [0.1.0] - 2026-10-25
 
@@ -68,5 +129,6 @@ the import name are `airgap`.
 - GitHub Actions: tests on Python 3.10, 3.11 and 3.12, and PyPI Trusted
   Publishing on release.
 
-[Unreleased]: https://github.com/zelihaguven/airgap/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/zelihaguven/airgap/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/zelihaguven/airgap/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/zelihaguven/airgap/releases/tag/v0.1.0
