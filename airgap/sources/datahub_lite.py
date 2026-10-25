@@ -8,6 +8,12 @@ into the same MetadataGraph the fixture and live-GMS sources produce.
 
 DataHub Lite embodies Airgap's whole thesis: a local-first governance auditor
 reading from a local-first DataHub. Nothing leaves the machine.
+
+The catalog is read with one public `datahub lite export` call. If that command
+fails, Airgap falls back to `datahub lite list-urns` plus one `datahub lite get`
+per entity, which gives the same result but starts one process per entity. An
+export that succeeds but has an unexpected format is an error, never an empty
+catalog. Only the public `datahub` CLI is used, no DataHub Python internals.
 """
 from __future__ import annotations
 
@@ -15,6 +21,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 
 from airgap.errors import AirgapError
 from airgap.model import Asset, Field, FieldLineage, LineageEdge, MetadataGraph
@@ -57,6 +64,47 @@ def _as_urn(item) -> str:
     if isinstance(item, dict):
         return item.get("string") or item.get("destinationUrn") or item.get("urn") or ""
     return ""
+
+
+class DataHubLiteFormatError(AirgapError, ValueError):
+    """`datahub lite export` succeeded but its output is not in the expected format.
+
+    An AirgapError, so the CLI prints it as a one-line `airgap: error:` message.
+    """
+
+
+def _format_error(detail: str) -> DataHubLiteFormatError:
+    return DataHubLiteFormatError(
+        f"`datahub lite export` returned an unexpected format ({detail}); this "
+        "DataHub version may not be supported. Airgap stopped instead of "
+        "reporting an empty or partial catalog."
+    )
+
+
+def _docs_from_export(payload) -> dict[str, dict]:
+    """Group exported aspects into {urn: {aspectName: aspect}}, like `get` returns.
+
+    The export is a JSON list of metadata change proposals, each with
+    `entityUrn`, `aspectName` and the aspect value under `aspect.json`.
+    Anything else raises DataHubLiteFormatError.
+    """
+    if not isinstance(payload, list):
+        raise _format_error(f"expected a JSON list, got {type(payload).__name__}")
+    docs: dict[str, dict] = {}
+    for i, item in enumerate(payload):
+        if not isinstance(item, dict):
+            raise _format_error(f"item {i} is a {type(item).__name__}, not an object")
+        urn, aspect_name = item.get("entityUrn"), item.get("aspectName")
+        aspect = item.get("aspect")
+        value = aspect.get("json") if isinstance(aspect, dict) else None
+        if not isinstance(urn, str) or not urn.startswith("urn:li:"):
+            raise _format_error(f"item {i} has no string 'entityUrn'")
+        if not isinstance(aspect_name, str) or not aspect_name:
+            raise _format_error(f"item {i} has no string 'aspectName'")
+        if not isinstance(value, dict):
+            raise _format_error(f"item {i} has no object at 'aspect.json'")
+        docs.setdefault(urn, {})[aspect_name] = value
+    return docs
 
 
 def _names(assoc: dict | None, key: str, id_field: str) -> tuple[str, ...]:
@@ -111,9 +159,42 @@ class DataHubLiteSource(MetadataSource):
     def _get(self, urn: str) -> dict:
         return json.loads(self._run("get", "--urn", urn))
 
+    def _export(self) -> str | None:
+        """Raw `datahub lite export` output, or None when the command fails."""
+        fd, path = tempfile.mkstemp(prefix="airgap-lite-export-", suffix=".json")
+        os.close(fd)
+        try:
+            try:
+                self._run("export", "--file", path)
+            except Exception as exc:  # noqa: BLE001  the export command itself failed
+                lines = [ln.strip() for ln in str(exc).splitlines() if ln.strip()]
+                detail = " ".join(lines[:1] + lines[1:][-1:]) or "export failed"
+                print(
+                    f"  ! {detail}; reading entities one by one instead (slower).",
+                    file=sys.stderr,
+                )
+                return None
+            with open(path, encoding="utf-8") as fh:
+                return fh.read()
+        finally:
+            os.unlink(path)
+
+    def _read_docs(self) -> dict[str, dict]:
+        raw = self._export()
+        if raw is None:
+            return {urn: self._get(urn) for urn in self._list_urns()}
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise _format_error(f"not valid JSON: {exc}") from None
+        docs = _docs_from_export(payload)
+        if not docs and self._list_urns():
+            raise _format_error("no entities, but `datahub lite list-urns` lists some")
+        return docs
+
     def fetch(self) -> MetadataGraph:
         graph = MetadataGraph()
-        docs = {urn: self._get(urn) for urn in self._list_urns()}
+        docs = self._read_docs()
 
         for urn, doc in docs.items():
             etype = _entity_type(urn)

@@ -219,6 +219,14 @@ runs `datahub lite import`. Airgap then reads every entity back through the
 `globalTags`, `ownership`, `upstreamLineage` including `fineGrainedLineages`,
 and `dashboardInfo` / `chartInfo`.
 
+The whole catalog is read with one `datahub lite export` call. If that command
+fails, Airgap prints a note and falls back to `datahub lite list-urns` plus one
+`datahub lite get` per entity, which is much slower because each call starts a
+new process. If the export succeeds but its output is not the expected list of
+aspects, Airgap stops with an `airgap: error:` message instead of reporting an
+empty catalog.
+Airgap uses only the public `datahub` CLI, not DataHub's Python internals.
+
 ### `datahub`: a running DataHub GMS
 
 ```bash
