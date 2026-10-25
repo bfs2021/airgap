@@ -40,8 +40,10 @@ Issues = "https://github.com/zelihaguven/airgap/issues"
 Changelog = "https://github.com/zelihaguven/airgap/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-# Local, Docker-free real DataHub instance (DuckDB-backed).
-datahub-lite = ["acryl-datahub[datahub-lite]>=1.6.0"]
+# Local, Docker-free real DataHub instance (DuckDB-backed). Since
+# acryl-datahub 1.7.0.14 the datahub-lite extra no longer pulls in DuckDB;
+# it comes from the separate duckdb extra.
+datahub-lite = ["acryl-datahub[datahub-lite,duckdb]>=1.6.0"]
 dev = ["pytest>=7.0"]
 
 [project.scripts]
