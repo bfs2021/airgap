@@ -81,6 +81,8 @@ class MetadataGraph:
     assets: dict[str, Asset] = field(default_factory=dict)
     edges: list[LineageEdge] = field(default_factory=list)
     field_edges: list[FieldLineage] = field(default_factory=list)
+    _index_key: tuple[int, int] | None = field(default=None, init=False, repr=False, compare=False)
+    _index: tuple | None = field(default=None, init=False, repr=False, compare=False)
 
     # ---- construction ----
     def add_asset(self, asset: Asset) -> None:
@@ -91,21 +93,40 @@ class MetadataGraph:
         return self.assets.get(urn)
 
     def downstream(self, urn: str) -> list[str]:
-        return [e.downstream for e in self.edges if e.upstream == urn]
+        return list(self._edge_index()[0].get(urn, ()))
 
     def upstream(self, urn: str) -> list[str]:
-        return [e.upstream for e in self.edges if e.downstream == urn]
+        return list(self._edge_index()[1].get(urn, ()))
+
+    def _edge_index(self) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
+        """Downstream and upstream adjacency built from `edges`, in edge order.
+
+        Sources append to `edges` or assign a new list, so the index is
+        rebuilt whenever the list object or its length changes. Without it
+        every lookup scanned all edges, which made detection quadratic.
+        """
+        key = (id(self.edges), len(self.edges))
+        if self._index_key != key:
+            down: dict[str, list[str]] = {}
+            up: dict[str, list[str]] = {}
+            for e in self.edges:
+                down.setdefault(e.upstream, []).append(e.downstream)
+                up.setdefault(e.downstream, []).append(e.upstream)
+            self._index = (down, up)
+            self._index_key = key
+        return self._index
 
     def transitive_downstream(self, urn: str) -> set[str]:
         """All assets reachable downstream from `urn` (excluding itself)."""
+        down = self._edge_index()[0]
         seen: set[str] = set()
-        stack = list(self.downstream(urn))
+        stack = list(down.get(urn, ()))
         while stack:
             cur = stack.pop()
             if cur in seen:
                 continue
             seen.add(cur)
-            stack.extend(self.downstream(cur))
+            stack.extend(down.get(cur, ()))
         return seen
 
     def field_downstream(self, urn: str, field_path: str) -> list[FieldLineage]:
