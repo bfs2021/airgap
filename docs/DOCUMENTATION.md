@@ -187,7 +187,9 @@ Airgap has three interchangeable metadata sources, all normalizing into the same
    the official SDK (`scripts/seed_datahub_lite.py` with `SchemaMetadata`,
    `GlobalTags`, `GlossaryTerms`, `Ownership`, `UpstreamLineage` with
    `FineGrainedLineage`, `DashboardInfo`/`ChartInfo`), and imports them.
-   `DataHubLiteSource` then reads them back through the `datahub lite` CLI. This
+   `DataHubLiteSource` then reads them back through the public `datahub lite`
+   CLI, with one `datahub lite export` call (falling back to one
+   `datahub lite get` per entity if the export command fails). This
    proves Airgap runs against real DataHub metadata with **no Docker and no
    cloud**, which is the whole point of a local-first tool.
 2. **`datahub`: live GMS** via GraphQL (§5.1 to §5.4), for any hosted instance.
