@@ -104,8 +104,9 @@ def write_graph_html(
             y = _MARGIN + i * _Y_GAP
             pos[urn] = (x, y)
 
-    width = _MARGIN * 2 + (max(layers) + 1) * _X_GAP
-    height = _MARGIN * 2 + max(len(v) for v in layers.values()) * _Y_GAP
+    # An empty catalog has no layers; render an empty canvas instead of failing.
+    width = _MARGIN * 2 + (max(layers, default=-1) + 1) * _X_GAP
+    height = _MARGIN * 2 + max((len(v) for v in layers.values()), default=0) * _Y_GAP
 
     edges_svg: list[str] = []
     for e in graph.edges:
