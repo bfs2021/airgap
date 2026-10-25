@@ -11,8 +11,11 @@ itself. They live in outputs/patches/ so they can go straight into a PR.
 from __future__ import annotations
 
 import os
+import re
 
 from airgap.detect.findings import Finding
+
+_PATCH_NAME_RE = re.compile(r"^AIRGAP-R\d+-\d{3}\.py$")
 
 _HEADER = '''"""Airgap remediation for {fid} — {title}
 
@@ -99,6 +102,10 @@ def _patch_code(finding: Finding) -> str:
 def generate_patches(findings: list[Finding], out_dir: str) -> list[str]:
     patch_dir = os.path.join(out_dir, "patches")
     os.makedirs(patch_dir, exist_ok=True)
+    # A reused --out would otherwise keep scripts for findings that are gone.
+    for name in os.listdir(patch_dir):
+        if _PATCH_NAME_RE.match(name):
+            os.remove(os.path.join(patch_dir, name))
     written: list[str] = []
     for f in findings:
         path = os.path.join(patch_dir, f"{f.id}.py")
