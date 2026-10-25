@@ -80,5 +80,7 @@ class LocalLLM:
         )
         try:
             return self._generate(prompt)
-        except Exception as exc:  # never let the LLM break the audit
-            return f"(local LLM explanation unavailable: {exc})"
+        except Exception:  # never let the LLM break the audit
+            # An empty explanation means "no prose"; the caller reports the
+            # failure once instead of storing a raw exception in the report.
+            return ""
