@@ -44,7 +44,7 @@ Changelog = "https://github.com/zelihaguven/airgap/blob/main/CHANGELOG.md"
 # acryl-datahub 1.7.0.14 the datahub-lite extra no longer pulls in DuckDB;
 # it comes from the separate duckdb extra.
 datahub-lite = ["acryl-datahub[datahub-lite,duckdb]>=1.6.0"]
-dev = ["pytest>=7.0"]
+dev = ["pytest>=7.0", "jsonschema>=4.0"]
 
 [project.scripts]
 airgap = "airgap.cli:main"

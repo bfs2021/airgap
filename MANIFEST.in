@@ -3,3 +3,4 @@
 # from an unpacked sdist. It is not part of the wheel.
 include config.yaml
 recursive-include tests *.py
+recursive-include tests/data *.json
