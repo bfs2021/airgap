@@ -39,7 +39,12 @@ def _dataset_marked(asset: Asset | None, pii_set: set[str]) -> bool:
 
 
 def _sensitive_origins(graph: MetadataGraph, pii_set: set[str]) -> list[tuple[str, str]]:
-    """Sensitive fields with no sensitive upstream — where PII first appears."""
+    """Where PII first appears: sensitive fields with no sensitive upstream.
+
+    Sensitive fields inside a fully classified lineage cycle (for example
+    reverse ETL between two tagged tables) all have a sensitive upstream, so
+    they are added as origins too when no other origin reaches them.
+    """
     upstream: dict[tuple[str, str], list[tuple[str, str]]] = {}
     for fe in graph.field_edges:
         upstream.setdefault((fe.down_urn, fe.down_field), []).append(
@@ -57,6 +62,16 @@ def _sensitive_origins(graph: MetadataGraph, pii_set: set[str]) -> list[tuple[st
             )
             if not has_sensitive_upstream:
                 origins.append((ds.urn, f.path))
+
+    reached = set(_walk_fields(graph, origins)) | set(origins)
+    for ds in graph.datasets():
+        for f in ds.fields:
+            node = (ds.urn, f.path)
+            if node in reached or not is_sensitive(f.markers(), pii_set):
+                continue
+            origins.append(node)
+            reached.add(node)
+            reached.update(_walk_fields(graph, [node]))
     return origins
 
 

@@ -194,8 +194,6 @@ def test_gms_dashboard_consumer_is_loaded(monkeypatch):
     assert g.get(dash) is not None
 
 
-@pytest.mark.xfail(strict=True, reason="B04: _sensitive_origins finds no origin when every sensitive "
-                   "field sits in a tagged cycle (reverse ETL), so downstream leaks are missed")
 def test_leak_downstream_of_tagged_cycle(tmp_path):
     c = Cat()
     crm = c.ds("crm_users", [("email", ["PII"])])
@@ -205,7 +203,12 @@ def test_leak_downstream_of_tagged_cycle(tmp_path):
     c.col(wh, crm, "email")
     c.col(wh, mk, "email")
     c.edge(mk, c.dashboard("growth"))
-    assert [f.asset_name for f in run_rules(c.graph(tmp_path), _cfg())] == ["marketing_export"]
+    findings = run_rules(c.graph(tmp_path), _cfg())
+    assert [f.asset_name for f in findings] == ["marketing_export"]
+    assert findings[0].severity == Severity.CRITICAL
+    assert findings[0].evidence == [
+        "crm_users.email -> warehouse_users.email -> marketing_export.email"
+    ]
 
 
 def test_config_without_detection_block_uses_defaults(tmp_path):
