@@ -147,9 +147,13 @@ For each URN it queries the `dataset(urn:)` resolver for:
   field-to-field leak tracing
 
 ### 5.3 Reading lineage
-For each dataset it queries the `entity(urn:).lineage(input:{direction: DOWNSTREAM})`
-resolver to build the asset-level lineage edges (including dashboards, charts,
-and ML entities that consume the data).
+Starting from every dataset, it queries the
+`entity(urn:).lineage(input:{direction: DOWNSTREAM})` resolver one hop at a
+time, 200 results per page, to build the asset-level lineage edges.
+Dashboards, charts, data jobs, data flows and ML models that it reaches are
+added as assets with their entity type, name, platform and owners, so
+human-facing consumers can raise severity. Their own downstream lineage is
+followed too, up to `datahub.lineage_depth` hops from the dataset (default 4).
 
 ### 5.4 Normalization
 GraphQL responses are mapped into the `MetadataGraph` model

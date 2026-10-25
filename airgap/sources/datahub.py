@@ -9,6 +9,7 @@ path; the bundled fixture mirrors exactly the shape it returns.
 """
 from __future__ import annotations
 
+from collections import deque
 from typing import Any
 
 import requests
@@ -46,17 +47,39 @@ query dataset($urn: String!) {
 }
 """
 
-_LINEAGE = """
-query lineage($urn: String!, $dir: LineageDirection!) {
+_OWNERS = "ownership { owners { owner { ... on CorpUser { urn } ... on CorpGroup { urn } } } }"
+
+# One hop of downstream lineage for any entity that has a lineage graph
+# (datasets, charts, dashboards, data jobs, ML models, ...), one page at a
+# time. Non-dataset targets carry enough metadata to become assets.
+_LINEAGE = (
+    """
+query lineage($urn: String!, $dir: LineageDirection!, $start: Int!, $count: Int!) {
   entity(urn: $urn) {
-    ... on Dataset {
-      lineage(input: {direction: $dir, start: 0, count: 200}) {
-        relationships { entity { urn type } }
+    ... on EntityWithRelationships {
+      lineage(input: {direction: $dir, start: $start, count: $count}) {
+        start
+        count
+        total
+        relationships {
+          type
+          entity {
+            urn
+            type
+            ... on Dashboard { platform { name } properties { name } OWNERS }
+            ... on Chart { platform { name } properties { name } OWNERS }
+            ... on DataJob { properties { name } OWNERS }
+            ... on DataFlow { platform { name } properties { name } OWNERS }
+            ... on MLModel { name platform { name } OWNERS }
+            ... on MLModelGroup { name platform { name } OWNERS }
+          }
+        }
       }
     }
   }
 }
 """
+).replace("OWNERS", _OWNERS)
 
 
 def _short(urn: str) -> str:
@@ -82,16 +105,61 @@ def _tag_names(container: dict | None, key: str) -> tuple[str, ...]:
     return tuple(out)
 
 
+def _entity_type(urn: str) -> str:
+    """Entity type from a URN, e.g. urn:li:dashboard:(...) -> dashboard.
+
+    Uses the same spelling as the DataHub Lite source (dataset, dashboard,
+    chart, mlModel, dataJob, ...), which is what ``human_facing_types`` in
+    the config refers to.
+    """
+    parts = urn.split(":")
+    return parts[2] if len(parts) > 2 and parts[0] == "urn" else "dataset"
+
+
+def _owner_urns(entity: dict) -> tuple[str, ...]:
+    return tuple(
+        (o.get("owner") or {}).get("urn", "")
+        for o in ((entity.get("ownership") or {}).get("owners") or [])
+        if (o.get("owner") or {}).get("urn")
+    )
+
+
+def _consumer_asset(entity: dict) -> Asset:
+    """Build an Asset for a non-dataset lineage target (dashboard, chart, ...)."""
+    urn = entity["urn"]
+    name = (
+        ((entity.get("properties") or {}).get("name"))
+        or entity.get("name")
+        or urn
+    )
+    return Asset(
+        urn=urn,
+        name=name,
+        entity_type=_entity_type(urn),
+        platform=((entity.get("platform") or {}).get("name")) or "",
+        owners=_owner_urns(entity),
+    )
+
+
 class DataHubSource(MetadataSource):
     name = "datahub"
 
-    def __init__(self, url: str, token: str, lineage_depth: int = 4, page_size: int = 50) -> None:
+    def __init__(
+        self,
+        url: str,
+        token: str,
+        lineage_depth: int = 4,
+        page_size: int = 50,
+        lineage_page_size: int = 200,
+    ) -> None:
         if not url:
             raise ValueError("datahub.url is required for source=datahub")
         self.endpoint = url.rstrip("/") + "/api/graphql"
         self.token = token
-        self.lineage_depth = lineage_depth
+        # Downstream hops walked from each dataset; at least one.
+        self.lineage_depth = max(1, int(lineage_depth))
         self.page_size = page_size
+        self.lineage_page_size = lineage_page_size
         self._session = requests.Session()
         if token:
             self._session.headers["Authorization"] = f"Bearer {token}"
@@ -165,15 +233,61 @@ class DataHubSource(MetadataSource):
                         )
         return asset, field_edges
 
+    def _downstream(self, urn: str) -> list[dict]:
+        """All one-hop downstream lineage entities of ``urn``, across pages."""
+        out: list[dict] = []
+        start = 0
+        while True:
+            data = self._gql(
+                _LINEAGE,
+                {
+                    "urn": urn,
+                    "dir": "DOWNSTREAM",
+                    "start": start,
+                    "count": self.lineage_page_size,
+                },
+            )
+            block = ((data.get("entity") or {}).get("lineage")) or {}
+            rels = block.get("relationships") or []
+            for r in rels:
+                ent = r.get("entity") or {}
+                if ent.get("urn"):
+                    out.append(ent)
+            start += self.lineage_page_size
+            if not rels or start >= (block.get("total") or 0):
+                break
+        return out
+
     def _fetch_edges(self, urn: str) -> list[LineageEdge]:
-        data = self._gql(_LINEAGE, {"urn": urn, "dir": "DOWNSTREAM"})
-        rels = (((data.get("entity") or {}).get("lineage") or {}).get("relationships")) or []
-        edges: list[LineageEdge] = []
-        for r in rels:
-            ent = r.get("entity") or {}
-            if ent.get("urn"):
-                edges.append(LineageEdge(upstream=urn, downstream=ent["urn"]))
-        return edges
+        return [LineageEdge(upstream=urn, downstream=e["urn"]) for e in self._downstream(urn)]
+
+    def _walk_lineage(self, graph: MetadataGraph, dataset_urns: list[str]) -> None:
+        """Breadth-first downstream walk, at most ``lineage_depth`` hops.
+
+        Every dataset found by search starts at hop 0. Non-dataset targets
+        (dashboards, charts, data jobs, ML models, ...) are added as assets,
+        and their own downstream lineage is followed while the hop count
+        stays below ``lineage_depth``. So with the default of 4, a chain
+        dataset -> chart -> dashboard is loaded in full, and with 1 only the
+        direct consumers of each dataset are.
+        """
+        hops: dict[str, int] = {u: 0 for u in dataset_urns}
+        queue: deque[str] = deque(dataset_urns)
+        seen_edges: set[tuple[str, str]] = set()
+        while queue:
+            urn = queue.popleft()
+            hop = hops[urn]
+            for ent in self._downstream(urn):
+                target = ent["urn"]
+                if (urn, target) not in seen_edges:
+                    seen_edges.add((urn, target))
+                    graph.edges.append(LineageEdge(upstream=urn, downstream=target))
+                if target not in graph.assets and _entity_type(target) != "dataset":
+                    graph.add_asset(_consumer_asset(ent))
+                if target not in hops:
+                    hops[target] = hop + 1
+                    if hop + 1 < self.lineage_depth:
+                        queue.append(target)
 
     def fetch(self) -> MetadataGraph:
         graph = MetadataGraph()
@@ -182,8 +296,7 @@ class DataHubSource(MetadataSource):
             asset, field_edges = self._fetch_dataset(urn)
             graph.add_asset(asset)
             graph.field_edges.extend(field_edges)
-        for urn in urns:
-            graph.edges.extend(self._fetch_edges(urn))
+        self._walk_lineage(graph, urns)
         return graph
 
 

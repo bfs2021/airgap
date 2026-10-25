@@ -171,6 +171,7 @@ The line `· Config: ...` in the output tells you which one was used. Copy
 | `source` | `fixture` | `fixture`, `datahub-lite` or `datahub`. |
 | `fixture_path` | `""` | JSON catalog for `source: fixture`. Empty means the bundled Acme catalog. A relative path is resolved against the config file's directory. |
 | `datahub.url`, `datahub.token` | `""` | GMS endpoint and personal access token for `source: datahub`. |
+| `datahub.lineage_depth` | `4` | For `source: datahub`, how many downstream hops to follow from each dataset. Dashboards, charts, data jobs and ML models reached within that many hops are loaded as assets. Values below 1 count as 1. |
 | `datahub_lite.bin` | (not set) | Path to the `datahub` executable for `source: datahub-lite`. Defaults to the one next to the running Python, else `datahub` on `PATH`. |
 | `ollama.url`, `ollama.model`, `ollama.timeout_seconds` | `http://localhost:11434`, `qwen2.5:7b`, `120` | Local explanation model. |
 | `ollama.enabled` | `true` | Set `false` (or pass `--no-llm`) to skip explanations. |
@@ -179,8 +180,7 @@ The line `· Config: ...` in the output tells you which one was used. Copy
 | `detection.severity.critical_blast_radius` | `3` | Blast radius at or above which a finding is CRITICAL. |
 | `detection.severity.high_blast_radius` | `1` | Blast radius at or above which a finding is HIGH. |
 
-`datahub.lineage_depth` and `ollama.prose_model` appear in the sample config
-but are not used by v0.1.0 (see [#4](https://github.com/zelihaguven/airgap/issues/4)).
+`ollama.prose_model` appears in the sample config but is not used by v0.1.0.
 
 Outputs go to `./outputs/` in the current directory. Change that with
 `--out DIR`.
@@ -223,14 +223,10 @@ airgap audit --source datahub --url https://your-datahub.example.com --token "$D
 
 Airgap sends read-only GraphQL queries to `<url>/api/graphql`: a dataset
 search, one query per dataset for schema, tags, terms, ownership and
-fine-grained lineage, and one downstream lineage query per dataset. You can
-also put the URL and token in your config file instead of on the command line.
-
-Known gaps in the GMS path, tracked for v0.2:
-
-- Dashboards and charts are not loaded as assets, so they do not escalate
-  severity, and `lineage_depth` is unused
-  ([#4](https://github.com/zelihaguven/airgap/issues/4)).
+fine-grained lineage, and paged downstream lineage queries (200 results per
+page) that start from every dataset and follow downstream entities for up to
+`datahub.lineage_depth` hops. You can also put the URL and token in your
+config file instead of on the command line.
 
 The `fixture` and `datahub-lite` paths are the ones exercised end to end today.
 

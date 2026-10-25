@@ -183,8 +183,6 @@ def test_gms_column_lineage_is_loaded(monkeypatch):
     assert [f.asset_name for f in run_rules(src.fetch(), _cfg()) if f.rule == "R1"] == ["export"]
 
 
-@pytest.mark.xfail(strict=True, reason="B02: the GMS source searches DATASET only and never loads "
-                   "dashboards/charts, so human-facing consumers never raise severity")
 def test_gms_dashboard_consumer_is_loaded(monkeypatch):
     src = DataHubSource("http://gms.invalid", "")
     d = _gms_dataset("users", [("email", ["PII"])])
